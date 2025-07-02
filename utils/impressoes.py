@@ -1,0 +1,1 @@
+# Funções para geração e envio de fichas para impressão

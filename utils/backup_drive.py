@@ -1,0 +1,1 @@
+# Funções de integração com Google Drive para backup

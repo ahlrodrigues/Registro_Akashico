@@ -1,0 +1,1 @@
+# Funções para hashing de senha e validações
