@@ -1,4 +1,17 @@
-__pycache__/
-*.pyc
-*.db
-.env
+# Arquivos temporários e do sistema
+*.log
+*.bak
+*.tmp
+*.swp
+.DS_Store
+
+# IDEs comuns
+.vscode/
+.idea/
+
+# Arquivos de backup do editor
+*~
+
+# Arquivos de distribuição
+dist/
+build/

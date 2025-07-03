@@ -24,9 +24,9 @@ def criar_cabecalho(root, **kwargs):
     botoes = [
         criar_link("🏠 Início", "inicio"),
         criar_link("🙋 Cadastro", "cadastro"),
-        criar_link("🧍 Assistidos", "assistidos"),
         criar_link("🧾 Presença", "presenca"),
         criar_link("🧠 Exames", "exames"),
+        criar_link("🧍 Assistidos", "assistidos"),
         criar_link("💬 Entrevistas", "entrevistas"),
         criar_link("👥 Usuários", "usuarios"),
         criar_link("🚪 Sair", "sair"),

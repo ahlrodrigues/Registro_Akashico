@@ -1,18 +1,36 @@
-
 import tkinter as tk
 from datetime import datetime
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
-from config import APP_NOME_CURTO, APP_VERSAO
+from ui.componentes.style import COR_FUNDO, COR_FONTE, FONTE_PEQUENA
 
-def criar_rodape(pai):
-    frame = tk.Frame(pai, bg='#E0FFFF', height=30)
-    frame.pack(side='bottom', fill='x')
+APP_VERSAO = "v1.0.0"
+APP_NOME = "Registro Akáshico"
+ANO_INICIAL = 2025
 
-    now = datetime.now().strftime('%d/%m/%Y %H:%M')
-    label = tk.Label(frame, text=f"{APP_NOME_CURTO} • {now} • v{APP_VERSAO}", 
-                     bg='#E0FFFF', fg='#00008B', font=('Arial', 9))
-    label.pack(side='right', padx=10)
+def criar_rodape(root, usuario=None):
+    ano_atual = datetime.now().year
+    intervalo_anos = f"{ANO_INICIAL}–{ano_atual}" if ano_atual > ANO_INICIAL else str(ANO_INICIAL)
 
-    return frame
+    frame = tk.Frame(root, bg=COR_FUNDO)
+    frame.pack(fill='x', side='bottom', pady=(10, 5))
+
+    nome_label = tk.Label(
+        frame,
+        text=f"© {intervalo_anos} – {APP_NOME} • Todos os direitos reservados – Versão {APP_VERSAO}",
+        font=FONTE_PEQUENA,
+        bg=COR_FUNDO,
+        fg=COR_FONTE
+    )
+    nome_label.pack(side='top')
+
+    if usuario:
+        nome = usuario.get("nome", "Usuário")
+        funcao = usuario.get("funcao", "")
+        user_label = tk.Label(
+            frame,
+            text=f"{nome} ({funcao})",
+            font=FONTE_PEQUENA,
+            bg=COR_FUNDO,
+            fg=COR_FONTE,
+            anchor="e"
+        )
+        user_label.pack(side='right', padx=10)
