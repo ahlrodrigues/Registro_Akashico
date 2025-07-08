@@ -1,0 +1,56 @@
+# Evita arquivos sensíveis e grandes
+.env
+*.env.*
+*.key
+*.pem
+*.crt
+*.cert
+*.p12
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.log
+*.tmp
+*.swp
+
+# Node.js (se estiver usando)
+node_modules/
+dist/
+build/
+
+# Python (se aplicável)
+__pycache__/
+*.py[cod]
+*.pyo
+.env/
+venv/
+*.egg-info/
+
+# Diretórios temporários e de sistema
+.DS_Store
+Thumbs.db
+*.~lock.*
+*.idea/
+.vscode/
+*.code-workspace
+
+# Arquivos de backup
+*~
+*.old
+*.orig
+*.bak
+
+# Relatórios e arquivos gerados
+*.pdf
+*.xlsx
+*.csv
+out/
+logs/
+report/
+
+# Arquivos de dependência bloqueados (opcional)
+package-lock.json
+poetry.lock
+yarn.lock
+Pipfile.lock

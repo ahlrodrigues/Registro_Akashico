@@ -1,0 +1,16 @@
+{
+  "name": "seara-luz-app",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "electron": "^28.1.0"
+  },
+  "dependencies": {
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}

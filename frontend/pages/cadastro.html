@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Usuário</title>
+  <link rel="stylesheet" href="../styles/style.css" />
+</head>
+<body>
+  <div id="cabecalho-container"></div>
+
+  <main>
+    <h2>Cadastro</h2>
+    <form id="form-cadastro">
+      <label for="nome">Nome completo:</label>
+      <input type="text" name="nome" required />
+      <label for="nomeSocial">Nome social / Apelido:</label>
+      <input type="text" name="nomeSocial"  />
+      <label for="nascimento">Data de nascimento:</label>
+      <input type="date" name="nascimento" required />
+      <label for="grau">Grau:</label>
+      <select name="grau">
+        <option value="Servidor">Assistido</option>
+        <option value="Servidor">Servidor</option>
+        <option value="Discípulo">Discípulo</option>
+      </select>
+      <label for="telefone">Telefone:</label>
+      <input type="text" name="telefone" />
+      <label for="redesSociais">Rede social</label>
+      <input type="text" name="redesSociais" />
+      <label for="email">E-mail:</label>
+      <input type="email" name="email" />
+      <label for="whatsapp">WhatsApp:</label>
+      <input type="text" name="whatsapp" />
+      <button type="submit">Cadastrar</button>
+      <label for="status">Status:</label>
+      <select id="status" name="status" required>
+        <option value="ativo" selected>Ativo</option>
+        <option value="desativado">Desativado</option>
+      </select>
+
+    </form>
+    <p id="mensagem"></p>
+  </main>
+
+  <div id="rodape-container"></div>
+  <script type="module" src="../scripts/incluirComponentes.js"></script>
+  <script type="module" src="../scripts/cadastro.js"></script>
+</body>
+</html>
+

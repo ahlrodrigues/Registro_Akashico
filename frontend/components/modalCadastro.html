@@ -1,0 +1,96 @@
+// modalCadastro.js
+
+// Seletores do DOM
+const modal = document.getElementById('modalCadastroUsuario');
+const form = document.getElementById('formEditarUsuario');
+const btnFechar = modal.querySelector('.modal-close');
+const btnExcluir = document.getElementById('btnExcluir');
+
+let usuarioAtual = null;
+
+/**
+ * Abre o modal e preenche os campos com os dados do usuário selecionado
+ * @param {number} id - ID do usuário
+ */
+export async function abrirModalCadastro(id) {
+  try {
+    usuarioAtual = await window.api.buscarUsuarioPorId(id);
+    if (!usuarioAtual) {
+      alert('Usuário não encontrado.');
+      return;
+    }
+
+    // Preenche o formulário
+    form.nome.value = usuarioAtual.nome || '';
+    form.apelido.value = usuarioAtual.apelido || '';
+    form.grau.value = usuarioAtual.grau || 'assistido';
+    form.telefone.value = usuarioAtual.telefone || '';
+    form.email.value = usuarioAtual.email || '';
+    form.status.value = usuarioAtual.status || 'ativo';
+
+    // Permissão: ADM pode excluir
+    const permissao = localStorage.getItem('funcaoUsuario');
+    btnExcluir.classList.toggle('hidden', permissao !== 'ADM');
+
+    // Abre o modal
+    modal.classList.remove('hidden');
+  } catch (error) {
+    console.error('Erro ao abrir modal de cadastro:', error);
+    alert('Erro ao carregar dados do usuário.');
+  }
+}
+
+/**
+ * Fecha o modal
+ */
+btnFechar.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+/**
+ * Envia alterações salvas
+ */
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const usuarioEditado = {
+    ...usuarioAtual,
+    nome: form.nome.value,
+    apelido: form.apelido.value,
+    grau: form.grau.value,
+    telefone: form.telefone.value,
+    email: form.email.value,
+    status: form.status.value
+  };
+
+  try {
+    await window.api.atualizarUsuario(usuarioEditado);
+    alert('Cadastro atualizado com sucesso!');
+    modal.classList.add('hidden');
+    location.reload(); // recarrega o relatório
+  } catch (error) {
+    console.error('Erro ao salvar cadastro:', error);
+    alert('Erro ao salvar cadastro.');
+  }
+});
+
+/**
+ * Exclui o usuário
+ */
+btnExcluir.addEventListener('click', async () => {
+  const confirmar = confirm('Deseja realmente excluir este cadastro?');
+  if (!confirmar) return;
+
+  try {
+    await window.api.excluirUsuario(usuarioAtual.id);
+    alert('Cadastro excluído com sucesso!');
+    modal.classList.add('hidden');
+    location.reload();
+  } catch (error) {
+    console.error('Erro ao excluir usuário:', error);
+    alert('Erro ao excluir cadastro.');
+  }
+});
+
+// Expõe a função globalmente
+window.abrirModalCadastro = abrirModalCadastro;
