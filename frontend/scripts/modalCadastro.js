@@ -1,7 +1,4 @@
 // modalCadastro.js
-const usuarios = await window.api.listarUsuarios();
-
-
 const modal = document.getElementById('modalCadastroUsuario');
 const form = document.getElementById('formEditarUsuario');
 const btnFechar = modal.querySelector('.modal-close');
@@ -12,28 +9,34 @@ let usuarioAtual = null;
 
 // Abre o modal e preenche os campos
 export async function abrirModalCadastro(id) {
-  usuarioAtual = await buscarUsuarioPorId(id);
-  if (!usuarioAtual) return alert('Usuário não encontrado.');
-
-  // Preenche o formulário
-  form.nome.value = usuarioAtual.nome;
-  form.apelido.value = usuarioAtual.apelido;
-  form.grau.value = usuarioAtual.grau;
-  form.telefone.value = usuarioAtual.telefone;
-  form.email.value = usuarioAtual.email;
-  form.status.value = usuarioAtual.status || 'ativo';
-
-  // Exibe modal
-  modal.classList.remove('hidden');
-
-  // Permissão: só ADM pode excluir
-  const permissao = localStorage.getItem('funcaoUsuario');
-  if (permissao === 'ADM') {
-    btnExcluir.classList.remove('hidden');
-  } else {
-    btnExcluir.classList.add('hidden');
+    try {
+      const usuario = await window.api.buscarUsuarioPorId(id);
+  
+      if (!usuario) {
+        throw new Error('Usuário não encontrado');
+      }
+  
+      // Preenche os campos do modal
+      document.getElementById('nome').value = usuario.nome;
+      document.getElementById('apelido').value = usuario.apelido || '';
+      document.getElementById('grau').value = usuario.grau;
+      document.getElementById('telefone').value = usuario.telefone || '';
+      document.getElementById('email').value = usuario.email || '';
+      document.getElementById('status').value = usuario.status;
+  
+      // Mostra o botão Excluir
+      const btnExcluir = document.getElementById('btnExcluir');
+      btnExcluir.classList.remove('hidden');
+      btnExcluir.dataset.id = usuario.id;
+  
+      // Exibe o modal
+      document.getElementById('modalCadastroUsuario').classList.remove('hidden');
+    } catch (erro) {
+      console.error('Erro ao abrir modal de cadastro:', erro);
+      alert('Erro ao carregar dados do usuário.');
+    }
   }
-}
+  
 
 // Fecha o modal
 btnFechar.addEventListener('click', () => {

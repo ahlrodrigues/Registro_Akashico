@@ -122,6 +122,22 @@ main {
   text-align: center;
 }
 
+.modal-alerta {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-conteudo {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
 #tabelaUsuarios {
   width: 100%;
   border-collapse: collapse;
