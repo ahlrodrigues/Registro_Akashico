@@ -1,6 +1,6 @@
 const modal = document.getElementById('modalCadastroUsuario');
 const form = document.getElementById('formEditarUsuario');
-const btnFechar = modal.querySelector('.modal-close');
+
 const btnFecharModal = document.getElementById('btnFecharModal');
 const btnExcluir = document.getElementById('btnExcluir');
 
@@ -26,9 +26,9 @@ export async function abrirModalCadastro(id) {
     form.email.value = usuarioAtual.email || '';
     form.status.value = usuarioAtual.status || 'ativo';
 
-    // Mostra botão Excluir se for ADM
-    const permissao = localStorage.getItem('funcaoUsuario');
-    btnExcluir.classList.toggle('hidden', permissao !== 'ADM');
+    // Mostra botão Excluir
+    btnExcluir.classList.remove('hidden');
+    btnExcluir.disabled = false;
     btnExcluir.dataset.id = usuarioAtual.id;
 
     // Abre o modal
@@ -38,13 +38,6 @@ export async function abrirModalCadastro(id) {
     alert('Erro ao carregar dados do usuário.');
   }
 }
-
-/**
- * Fecha o modal (botão X)
- */
-btnFechar.addEventListener('click', () => {
-  modal.classList.add('hidden');
-});
 
 /**
  * Fecha o modal (botão "Fechar")
@@ -71,7 +64,6 @@ form.addEventListener('submit', async (e) => {
 
   try {
     await window.api.atualizarUsuario(usuarioEditado);
-    alert('Cadastro atualizado com sucesso!');
     modal.classList.add('hidden');
     if (typeof window.carregarRelatorio === 'function') {
       window.carregarRelatorio(); // Atualiza sem reload
@@ -83,7 +75,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 /**
- * Excluir usuário atual
+ * Excluir usuário atual (sem restrição de função)
  */
 btnExcluir.addEventListener('click', async () => {
   const confirmar = confirm('Tem certeza que deseja excluir este cadastro?');
@@ -91,14 +83,12 @@ btnExcluir.addEventListener('click', async () => {
 
   try {
     await window.api.excluirUsuario(usuarioAtual.id);
-    alert('Cadastro excluído com sucesso!');
     modal.classList.add('hidden');
     if (typeof window.carregarRelatorio === 'function') {
       window.carregarRelatorio(); // Atualiza sem reload
     }
   } catch (error) {
     console.error('Erro ao excluir usuário:', error);
-    alert('Erro ao excluir cadastro.');
   }
 });
 
