@@ -99,7 +99,7 @@ function registrarUsuarioHandlers(ipcMain) {
   });
 
   ipcMain.handle('usuario:listar', async () => {
-    return listarUsuarios(true); // apenas ativos
+    return listarUsuarios(false); // apenas ativos
   });
 
   ipcMain.handle('usuario:buscarPorId', async (event, id) => {

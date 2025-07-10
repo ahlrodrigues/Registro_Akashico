@@ -1,43 +1,59 @@
-// relatorio.js
-
 import { abrirModalCadastro } from './modalCadastro.js';
 
-const tabela = document.getElementById('tabelaUsuarios').querySelector('tbody');
+// Referências aos elementos da DOM
+const tabela = document.getElementById('tabelaUsuarios').getElementsByTagName('tbody')[0];
 const campoBusca = document.getElementById('busca');
-const btnVer = document.getElementById('btnVer');
 const selecionarTodos = document.getElementById('selecionarTodos');
+const btnVer = document.getElementById('btnVer');
 
-// Cria uma linha da tabela
-function criarLinha(usuario) {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="checkbox" class="selecionarLinha" data-id="${usuario.id}"></td>
-    <td>${usuario.id}</td>
-    <td>${usuario.nome}</td>
-    <td>${usuario.apelido || ''}</td>
-    <td>${usuario.telefone || ''}</td>
-    <td>${usuario.email || ''}</td>
-    <td>${usuario.grau}</td>
-    <td>${usuario.status}</td>
-  `;
-  return tr;
-}
-
-// Carrega usuários ativos na tabela
-async function carregarUsuarios() {
+/**
+ * Carrega os usuários e popula a tabela
+ */
+export async function carregarRelatorio() {
   try {
-    const usuarios = await window.api.listarUsuarios();
+    const usuarios = await window.api.listarUsuarios(false);
     tabela.innerHTML = '';
 
     usuarios.forEach(usuario => {
-      tabela.appendChild(criarLinha(usuario));
+      const linha = tabela.insertRow();
+
+      // [0] Checkbox
+      const celulaCheckbox = linha.insertCell();
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.classList.add('selecionarLinha');
+      checkbox.dataset.id = usuario.id;
+      celulaCheckbox.appendChild(checkbox);
+
+      // [1] ID
+      linha.insertCell().textContent = usuario.id;
+
+      // [2] Nome
+      linha.insertCell().textContent = usuario.nome;
+
+      // [3] Apelido
+      linha.insertCell().textContent = usuario.apelido || '';
+
+      // [4] Telefone
+      linha.insertCell().textContent = usuario.telefone || '';
+
+      // [5] Email
+      linha.insertCell().textContent = usuario.email || '';
+
+      // [6] Grau
+      linha.insertCell().textContent = usuario.grau || '';
+
+      // [7] Status
+      linha.insertCell().textContent = usuario.status || '';
     });
   } catch (err) {
     console.error('Erro ao carregar usuários:', err);
   }
 }
 
-// Filtro de busca
+/**
+ * Filtro de busca por nome
+ */
 campoBusca.addEventListener('input', () => {
   const termo = campoBusca.value.toLowerCase();
   const linhas = tabela.querySelectorAll('tr');
@@ -47,49 +63,54 @@ campoBusca.addEventListener('input', () => {
   });
 });
 
-// Selecionar todos
+/**
+ * Selecionar/Deselecionar todos os checkboxes
+ */
 selecionarTodos.addEventListener('change', () => {
   const checkboxes = tabela.querySelectorAll('.selecionarLinha');
   checkboxes.forEach(cb => cb.checked = selecionarTodos.checked);
 });
 
-// Botão Ver
+/**
+ * Ação do botão Ver
+ */
 btnVer.addEventListener('click', () => {
-  const checkboxes = document.querySelectorAll(".selecionarLinha:checked");
+  const selecionados = document.querySelectorAll(".selecionarLinha:checked");
 
-  if (checkboxes.length === 0) {
+  if (selecionados.length === 0) {
     exibirAlerta("Por favor, selecione um registro para visualizar.");
     return;
   }
 
-  if (checkboxes.length > 1) {
+  if (selecionados.length > 1) {
     exibirAlerta("Selecione apenas um registro por vez.");
     return;
   }
 
-  const checkboxSelecionado = checkboxes[0];
-  const id = checkboxSelecionado.dataset.id;
-
+  const id = selecionados[0].dataset.id;
   if (!id) {
-    exibirAlerta("Erro: ID do usuário não encontrado no checkbox selecionado.");
+    exibirAlerta("Erro: ID do usuário não encontrado.");
     return;
   }
 
-  abrirModalCadastro(id);
+  abrirModalCadastro(Number(id));
 });
 
-// Exibe um alerta simples reutilizando o modal de cadastro como base
+/**
+ * Exibe alerta no modal (temporário)
+ */
 function exibirAlerta(mensagem) {
   const modal = document.getElementById("modalCadastroUsuario");
   const form = modal.querySelector("form");
+  const titulo = modal.querySelector("h2");
+  const conteudoModal = modal.querySelector(".modal-box");
+
   form.classList.add("hidden");
+  titulo.textContent = "Atenção";
 
-  modal.querySelector("h2").textContent = "Atenção";
-
-  // Limpa mensagens de alerta anteriores, se houver
-  const conteudoModal = modal.querySelector(".modal-content");
-  const alertasExistentes = conteudoModal.querySelectorAll(".alerta-temporaria");
-  alertasExistentes.forEach(alerta => alerta.remove());
+  // Remove alertas anteriores
+  const alertas = conteudoModal.querySelectorAll(".alerta-temporaria");
+  alertas.forEach(el => el.remove());
 
   const alertaDiv = document.createElement("div");
   alertaDiv.classList.add("alerta-temporaria");
@@ -99,16 +120,20 @@ function exibirAlerta(mensagem) {
       <button class="fechar-alerta">OK</button>
     </div>
   `;
-
   conteudoModal.appendChild(alertaDiv);
+
   modal.classList.remove("hidden");
 
   alertaDiv.querySelector(".fechar-alerta").addEventListener("click", () => {
-    conteudoModal.removeChild(alertaDiv);
+    alertaDiv.remove();
     form.classList.remove("hidden");
+    titulo.textContent = "Editar Cadastro";
     modal.classList.add("hidden");
   });
 }
 
-// Inicializa carregando os usuários
-carregarUsuarios();
+// Inicializa o relatório ao carregar a página
+carregarRelatorio();
+
+// Expõe a função para ser usada no modal
+window.carregarRelatorio = carregarRelatorio;

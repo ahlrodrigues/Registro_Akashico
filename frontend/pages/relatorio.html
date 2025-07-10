@@ -33,18 +33,17 @@
           <th>Status</th>
         </tr>
       </thead>
-      
       <tbody>
-        <!-- Preenchido via JS -->
+        <!-- Conteúdo preenchido via JS -->
       </tbody>
     </table>
   </main>
 
   <!-- Modal do Cadastro -->
   <div id="modalCadastroUsuario" class="modal hidden">
-    <div class="modal-content">
-      <span class="modal-close">&times;</span>
-      <h2>Cadastro de Usuário</h2>
+    <div class="modal-box modal-content">
+      <button class="modal-close">&times;</button>
+      <h2>Editar Cadastro</h2>
 
       <form id="formEditarUsuario">
         <label for="nome">Nome:</label>
@@ -72,7 +71,7 @@
           <option value="desativado">Desativado</option>
         </select>
 
-        <!-- Espaço para relatórios futuros -->
+        <!-- Relatórios adicionais -->
         <section id="relatoriosExtras" class="hidden">
           <h3>Presenças (últimos 6 meses)</h3>
           <div id="relatorioPresencas"></div>
@@ -81,15 +80,16 @@
           <div id="relatorioPasses"></div>
         </section>
 
-        <div class="modal-footer">
-          <button type="submit" id="btnSalvar">Salvar</button>
-          <button type="button" id="btnExcluir" class="danger hidden">Excluir</button>
+        <div class="form-actions">
+          <button type="submit" id="btnSalvar" class="btn btn-primary">Salvar</button>
+          <button type="button" class="btn" id="btnFecharModal">Fechar</button>
+          <button type="button" id="btnExcluir" class="btn btn-danger hidden">Excluir</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Carrega o cabeçalho (modular) após o DOM -->
+  <!-- Carregamento modular do cabeçalho -->
   <script type="module" src="../scripts/incluirComponentes.js"></script>
 </body>
 </html>
