@@ -62,6 +62,8 @@ criarTabelaUsuarios().then(() => {
 const { registrarLoginHandler } = require('./backend/handlers/loginHandler');
 registrarLoginHandler(ipcMain);
 
+const { registrarPasseHandler } = require('./backend/handlers/passesHandlers');
+registrarPasseHandler(ipcMain);
 
 
 
