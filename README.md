@@ -67,7 +67,3 @@ A todos os trabalhadores do bem que dedicam tempo, carinho e esforço ao próxim
 
 
 
----
-
-Se quiser, posso adaptar com o nome do seu repositório, autor, licença ou links reais. Deseja isso?
-
