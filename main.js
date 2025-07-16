@@ -1,7 +1,9 @@
 // main.js
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-require('dotenv').config(); // Carrega variáveis de ambiente do .env
+require('dotenv').config();
+const { atualizarStatusAutomaticamente } = require('./backend/handlers/statusHandler');
+
 
 let mainWindow;
 
@@ -28,7 +30,15 @@ function createWindow() {
 /**
  * Evento disparado quando o Electron estiver pronto
  */
-app.whenReady().then(createWindow);
+
+app.whenReady().then(() => {
+  createWindow();
+
+  // ⏱️ Atualiza status dos assistidos com ausência > 90 dias
+  atualizarStatusAutomaticamente()
+    .then(() => console.log('✅ Verificação de status finalizada.'))
+    .catch(err => console.error('❌ Falha ao atualizar status:', err));
+});
 
 /**
  * Fecha o app quando todas as janelas forem fechadas (exceto no macOS)
@@ -64,6 +74,9 @@ registrarLoginHandler(ipcMain);
 
 const { registrarPasseHandler } = require('./backend/handlers/passesHandlers');
 registrarPasseHandler(ipcMain);
+
+require('./backend/handlers/presencasHandler.js');
+
 
 
 

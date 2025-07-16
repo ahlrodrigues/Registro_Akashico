@@ -7,9 +7,11 @@
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
-    "electron": "^28.1.0"
+    "electron": "^28.1.0",
+    "electron-rebuild": "^3.2.9"
   },
   "dependencies": {
+    "better-sqlite3": "^12.2.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   }

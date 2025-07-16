@@ -40,6 +40,36 @@
           <option value="inativo">Inativo</option>
         </select>
       </div>
+      <div id="calendario-container">
+        <div class="calendario-header">
+          <button id="mes-anterior" class="btn-nav">&#9664;</button>
+          <span id="mes-ano-atual">Julho 2025</span>
+          <button id="mes-seguinte" class="btn-nav">&#9654;</button>
+        </div>
+      
+        <table class="calendario-tabela">
+          <thead>
+            <tr>
+              <th>Dom</th>
+              <th>Seg</th>
+              <th>Ter</th>
+              <th>Qua</th>
+              <th>Qui</th>
+              <th>Sex</th>
+              <th>Sáb</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-calendario">
+            <!-- Linhas geradas dinamicamente pelo JS -->
+          </tbody>
+        </table>
+      
+        <p class="calendario-legenda">
+          * Clique para marcar/desmarcar presença<br>
+          * Passe o mouse para ver o horário
+        </p>
+      </div>
+      
 
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salvar</button>
@@ -48,3 +78,27 @@
     </form>
   </div>
 </div>
+
+<script type="module">
+  import { renderizarCalendario } from './js/calendarioPresencas.js';
+
+  // Quando o modal for aberto com os dados preenchidos
+  window.abrirModalEditarUsuario = async (dados) => {
+    // Preenche o formulário
+    document.getElementById("nome").value = dados.nome || "";
+    document.getElementById("apelido").value = dados.apelido || "";
+    document.getElementById("grau").value = dados.grau || "";
+    document.getElementById("telefone").value = dados.telefone || "";
+    document.getElementById("email").value = dados.email || "";
+    document.getElementById("status").value = dados.status || "";
+
+    // Exibe o modal
+    document.getElementById("modalCadastroUsuario").classList.remove("hidden");
+
+    // Carrega o calendário com o ID do assistido
+    if (dados.id) {
+      await renderizarCalendario(dados.id);
+    }
+  };
+</script>
+

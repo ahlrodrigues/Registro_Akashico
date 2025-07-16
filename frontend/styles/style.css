@@ -47,6 +47,105 @@ button:hover {
   background-color: #000070;
 }
 
+/* ===== Calendário de Presenças ===== */
+#calendario-container {
+  margin-top: 1.5em;
+  padding: 1em;
+  border: 2px solid #00008B;
+  border-radius: 8px;
+  background-color: #f8fafd;
+}
+
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5em;
+}
+
+.calendario-header .btn-nav {
+  background: none;
+  border: none;
+  color: #00008B;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.calendario-header #mes-ano-atual {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #00008B;
+}
+
+.calendario-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.95em;
+}
+
+.calendario-tabela th {
+  background-color: #dceeff;
+  color: #00008B;
+  padding: 6px;
+  text-align: center;
+  border: 1px solid #c0e0f0;
+}
+
+.calendario-tabela td {
+  height: 40px;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  position: relative;
+  background-color: #fff;
+}
+
+.calendario-tabela td:hover {
+  background-color: #f0f8ff;
+}
+
+.calendario-tabela td.presente {
+  background-color: #90ee90 !important; /* verde claro */
+  font-weight: bold;
+  color: #003300;
+}
+
+.calendario-tabela td.ausente {
+  background-color: #f8fafd;
+}
+
+.calendario-tabela td.vazio {
+  background-color: #f8fafd;
+  cursor: default;
+}
+
+.calendario-legenda {
+  font-size: 0.85em;
+  margin-top: 0.5em;
+  color: #00008B;
+  text-align: center;
+}
+
+/* Tooltip para mostrar horário */
+.calendario-tabela td[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #00008B;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
 footer.rodape {
   background-color: #00008B;
   color: white;
