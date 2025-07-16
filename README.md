@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="assent/logo.jpeg" alt="Registro Akashico" width="200"/>
+</p>
+
+
 🌟 Registro Akashico – Sistema de Apoio Fraterno
 
 O Seara de Luz é um sistema construído com carinho para apoiar o trabalho fraterno em Centros Espíritas. Nosso objetivo é facilitar o registro e acompanhamento dos assistidos, com foco no acolhimento, organização e continuidade dos atendimentos.
