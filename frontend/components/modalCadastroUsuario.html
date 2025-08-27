@@ -1,0 +1,355 @@
+<!-- ============================================
+  PATH: frontend/components/modalCadastroUsuario.html
+  OBJ: Modal de Cadastro/Edição (novo schema)
+  Notas:
+  - Usa style.css para estilos de .modal, .hidden, .modal-box etc.
+  - i18n: data-i18n nas labels/placeholders
+  ============================================ -->
+<div id="modalCadastroUsuario" class="modal hidden" aria-hidden="true">
+  <div class="modal-box">
+
+    <h2 data-i18n="cadastro.modal.titulo">Cadastro do Usuário</h2>
+
+    <!-- Área de resposta (sucesso/erro) dentro do modal -->
+    <div id="modalCadastroMsg" class="modal-msg hidden" role="alert" aria-live="polite"></div>
+
+    <form id="formEditarUsuario">
+      <!-- Armazenar ID quando for edição -->
+      <input type="hidden" id="usuarioId" name="usuarioId" />
+
+      <!-- ===================== Identificação ===================== -->
+      <div class="form-group">
+        <label for="nomeCompleto" data-i18n="cadastro.nomeCompleto">Nome completo</label>
+        <input type="text" id="nomeCompleto" name="nomeCompleto" required />
+      </div>
+
+      <div class="form-group">
+        <label for="nomeSocial" data-i18n="cadastro.nomeSocial">Nome social / Apelido</label>
+        <input type="text" id="nomeSocial" name="nomeSocial" />
+      </div>
+
+      <div class="form-group">
+        <label for="dataNascimento" data-i18n="cadastro.dataNascimento">Data de nascimento</label>
+        <input type="date" id="dataNascimento" name="dataNascimento" required />
+      </div>
+
+      <!-- ===================== Endereço ===================== -->
+      <div class="form-group">
+        <label for="cep" data-i18n="cadastro.cep">CEP</label>
+        <input
+          type="text"
+          id="cep"
+          name="cep"
+          inputmode="numeric"
+          placeholder="00000-000"
+          maxlength="9"
+          title="Use o formato 00000-000"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="logradouro" data-i18n="cadastro.logradouro">Rua/Av.</label>
+          <input type="text" id="logradouro" name="logradouro" required />
+        </div>
+
+        <div class="form-group" style="max-width:140px;">
+          <label for="numero" data-i18n="cadastro.numero">Número</label>
+          <input type="text" id="numero" name="numero" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bairro" data-i18n="cadastro.bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" required />
+        </div>
+
+        <div class="form-group">
+          <label for="cidade" data-i18n="cadastro.cidade">Cidade</label>
+          <input type="text" id="cidade" name="cidade" required />
+        </div>
+
+        <div class="form-group" style="max-width:160px;">
+          <label for="estado" data-i18n="cadastro.estado">Estado</label>
+          <select id="estado" name="estado" required>
+            <option value="" disabled selected data-i18n="cadastro.estado.selecione">Selecione</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+            <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+            <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+            <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+            <option>SE</option><option>TO</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ===================== Contatos ===================== -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone" data-i18n="cadastro.telefone">Telefone</label>
+          <input type="tel" id="telefone" name="telefone" placeholder="(00) 00000-0000" />
+        </div>
+
+        <div class="form-group">
+          <label for="email" data-i18n="cadastro.email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="exemplo@dominio.com" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="redeSocial" data-i18n="cadastro.redeSocial">Rede social</label>
+        <input type="text" id="redeSocial" name="redeSocial" placeholder="@usuario ou URL" />
+      </div>
+
+      <!-- ===================== Status ===================== -->
+      <div class="form-group">
+        <label for="status" data-i18n="cadastro.status">Status</label>
+        <select id="status" name="status" required>
+          <option value="ativo" data-i18n="cadastro.status.ativo">Ativo</option>
+          <option value="desativado" data-i18n="cadastro.status.desativado">Desativado</option>
+        </select>
+      </div>
+
+      <!-- ===================== Calendário (mantido) ===================== -->
+      <div id="calendario-container">
+        <div class="calendario-header">
+          <button id="mes-anterior" class="btn-nav" type="button">&#9664;</button>
+          <span id="mes-ano-atual">Julho 2025</span>
+          <button id="mes-seguinte" class="btn-nav" type="button">&#9654;</button>
+        </div>
+
+        <table class="calendario-tabela">
+          <thead>
+            <tr>
+              <th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-calendario"></tbody>
+        </table>
+
+        <p class="calendario-legenda">
+          * Clique para marcar/desmarcar presença<br />
+          * Passe o mouse para ver o horário
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" data-i18n="cadastro.btn.salvar">Salvar</button>
+        <button type="button" id="btnExcluir" class="btn btn-danger hidden" data-i18n="cadastro.btn.excluir">Excluir</button>
+        <button type="button" id="btnFechar" class="btn" data-i18n="cadastro.btn.fechar">Fechar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  // ============================================
+  // PATH: frontend/components/modalCadastroUsuario.js
+  // OBJ: Lógica do modal de cadastro/edição (novo schema)
+  // - CEP com máscara e ViaCEP (silencioso)
+  // - Salvar/Atualizar com feedback dentro do modal
+  // - Integração calendário de presenças
+  // ============================================
+  import { renderizarCalendario } from './js/calendarioPresencas.js';
+
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const val = (id) => ($(id)?.value ?? '').trim();
+
+  // Mensagem dentro do modal
+  function setModalMsg(tipo, texto) {
+    const el = $('modalCadastroMsg');
+    if (!el) return;
+    el.textContent = texto;
+    el.classList.remove('hidden', 'ok', 'erro', 'warn', 'info');
+    el.classList.add(tipo); // defina css: .modal-msg.ok/.erro/.warn/.info
+    // exemplo no CSS: .modal-msg.ok { color: #2e7d32; } .erro { color:#c62828; }
+  }
+
+  function clearModalMsg() {
+    const el = $('modalCadastroMsg');
+    if (el) { el.textContent = ''; el.classList.add('hidden'); }
+  }
+
+  // CEP: máscara e ViaCEP
+  function normalizarCep(raw) {
+    const n = (raw || '').replace(/\D/g, '').slice(0, 8);
+    return n.length > 5 ? `${n.slice(0,5)}-${n.slice(5)}` : n;
+  }
+  function cepValido(cep) { return /^\d{5}-\d{3}$/.test(cep || ''); }
+  function cepSomenteDigitos(cep) { return (cep || '').replace(/\D/g, '').slice(0,8); }
+
+  const cacheCep = new Map();
+  async function buscarEnderecoPorCep(cep) {
+    const limpo = cepSomenteDigitos(cep);
+    if (limpo.length !== 8) return null;
+    if (cacheCep.has(limpo)) return cacheCep.get(limpo);
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${limpo}/json/`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data?.erro) { cacheCep.set(limpo, null); return null; }
+      const out = { logradouro: data.logradouro||'', bairro: data.bairro||'', localidade: data.localidade||'', uf: data.uf||'' };
+      cacheCep.set(limpo, out);
+      return out;
+    } catch (e) {
+      console.error('[modalCadastro][CEP]', e);
+      return null;
+    }
+  }
+  function toggleEnderecoDisabled(disabled) {
+    ['logradouro','bairro','cidade','estado','numero'].forEach(id => { const el=$(id); if (el) el.disabled = disabled; });
+  }
+
+  // ---------- Abrir/fechar modal ----------
+  function abrirModal() {
+    clearModalMsg();
+    $('modalCadastroUsuario')?.classList.remove('hidden');
+    $('modalCadastroUsuario')?.setAttribute('aria-hidden','false');
+  }
+  function fecharModal() {
+    $('modalCadastroUsuario')?.classList.add('hidden');
+    $('modalCadastroUsuario')?.setAttribute('aria-hidden','true');
+  }
+  $('btnFechar')?.addEventListener('click', fecharModal);
+
+  // Expor função global para abrir já preenchido (compatível com seu fluxo)
+  window.abrirModalEditarUsuario = async (dados = {}) => {
+    // Mapeia nomes antigos para novos (compat)
+    const nomeCompleto   = dados.nomeCompleto ?? dados.nome ?? '';
+    const nomeSocial     = dados.nomeSocial ?? dados.apelido ?? '';
+    const dataNascimento = dados.dataNascimento ?? '';
+    const status         = (dados.status === 'desativado' || dados.status === 'inativo') ? 'desativado' : 'ativo';
+
+    // Endereço (se vier em campos soltos ou objeto)
+    const endereco = dados.endereco || {};
+    const cep        = endereco.cep ?? dados.cep ?? '';
+    const logradouro = endereco.logradouro ?? dados.logradouro ?? '';
+    const numero     = endereco.numero ?? dados.numero ?? '';
+    const bairro     = endereco.bairro ?? dados.bairro ?? '';
+    const cidade     = endereco.cidade ?? dados.cidade ?? '';
+    const estado     = endereco.estado ?? dados.estado ?? '';
+
+    // Preenche form
+    $('usuarioId').value     = dados.id ?? '';
+    $('nomeCompleto').value  = nomeCompleto;
+    $('nomeSocial').value    = nomeSocial;
+    $('dataNascimento').value= dataNascimento;
+    $('cep').value           = normalizarCep(cep);
+    $('logradouro').value    = logradouro;
+    $('numero').value        = numero;
+    $('bairro').value        = bairro;
+    $('cidade').value        = cidade;
+    $('estado').value        = estado;
+    $('telefone').value      = dados.telefone ?? '';
+    $('email').value         = dados.email ?? '';
+    $('redeSocial').value    = dados.redeSocial ?? '';
+    $('status').value        = status;
+
+    // Mostrar/ocultar botão excluir
+    const btnExcluir = $('btnExcluir');
+    if (btnExcluir) btnExcluir.classList.toggle('hidden', !dados.id);
+
+    // Exibe modal
+    abrirModal();
+
+    // Carrega calendário se houver ID
+    if (dados.id) {
+      await renderizarCalendario(dados.id);
+    }
+  };
+
+  // ---------- CEP: máscara e autofill ----------
+  $('cep')?.addEventListener('input', (ev) => {
+    ev.target.value = normalizarCep(ev.target.value);
+  });
+  $('cep')?.addEventListener('blur', tentarPreencherPorCep);
+  $('cep')?.addEventListener('keyup', () => {
+    if (cepSomenteDigitos($('cep').value).length === 8) tentarPreencherPorCep();
+  });
+
+  async function tentarPreencherPorCep() {
+    const cepAtual = val('cep');
+    if (!cepValido(cepAtual)) return;
+    toggleEnderecoDisabled(true);
+    const dados = await buscarEnderecoPorCep(cepAtual);
+    toggleEnderecoDisabled(false);
+    if (!dados) return; // sem mensagens; usuário pode preencher manualmente
+    if (!$('logradouro').value) $('logradouro').value = dados.logradouro;
+    if (!$('bairro').value)     $('bairro').value     = dados.bairro;
+    if (!$('cidade').value)     $('cidade').value     = dados.localidade;
+    if (!$('estado').value)     $('estado').value     = dados.uf;
+    $('numero')?.focus();
+  }
+
+  // ---------- Submit Salvar/Atualizar ----------
+  $('formEditarUsuario')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearModalMsg();
+
+    // Coleta
+    const id = val('usuarioId');
+    const payload = {
+      nomeCompleto:   val('nomeCompleto'),
+      nomeSocial:     val('nomeSocial'),
+      dataNascimento: val('dataNascimento'),
+      endereco: {
+        cep:        normalizarCep(val('cep')),
+        logradouro: val('logradouro'),
+        numero:     val('numero'),
+        bairro:     val('bairro'),
+        cidade:     val('cidade'),
+        estado:     val('estado'),
+      },
+      telefone:   val('telefone'),
+      email:      val('email'),
+      redeSocial: val('redeSocial'),
+      status:     val('status') || 'ativo'
+    };
+
+    // Validações mínimas
+    if (!payload.nomeCompleto)   return setModalMsg('erro', '❌ Informe o nome completo.');
+    if (!payload.dataNascimento) return setModalMsg('erro', '❌ Informe a data de nascimento.');
+    if (!cepValido(payload.endereco.cep)) return setModalMsg('erro', '❌ CEP inválido. Use 00000-000.');
+    if (!payload.endereco.logradouro) return setModalMsg('erro', '❌ Informe a Rua/Av.');
+    if (!payload.endereco.numero)     return setModalMsg('erro', '❌ Informe o número.');
+    if (!payload.endereco.bairro)     return setModalMsg('erro', '❌ Informe o bairro.');
+    if (!payload.endereco.cidade)     return setModalMsg('erro', '❌ Informe a cidade.');
+    if (!payload.endereco.estado)     return setModalMsg('erro', '❌ Selecione o estado (UF).');
+
+    try {
+      if (id) {
+        await window.api.atualizarUsuario({ id: Number(id), ...payload });
+        setModalMsg('ok', '✅ Cadastro atualizado com sucesso.');
+      } else {
+        const novoId = await window.api.cadastrarUsuario(payload);
+        $('usuarioId').value = String(novoId); // guarda no form
+        setModalMsg('ok', `✅ Cadastro criado com sucesso. ID: ${novoId}`);
+        // (Opcional) renderizar calendário para novo ID
+        try { await renderizarCalendario(Number(novoId)); } catch {}
+      }
+    } catch (err) {
+      console.error('[modalCadastro] Erro ao salvar:', err);
+      setModalMsg('erro', '❌ Erro ao salvar. Tente novamente.');
+    }
+  });
+
+  // ---------- Excluir ----------
+  $('btnExcluir')?.addEventListener('click', async () => {
+    clearModalMsg();
+    const id = Number(val('usuarioId'));
+    if (!id) return setModalMsg('warn', '⚠️ Nenhum usuário selecionado.');
+    try {
+      await window.api.excluirUsuario(id);
+      setModalMsg('ok', '✅ Cadastro excluído.');
+      // Limpa o form após excluir
+      $('formEditarUsuario')?.reset();
+      $('usuarioId').value = '';
+    } catch (err) {
+      console.error('[modalCadastro] Erro ao excluir:', err);
+      setModalMsg('erro', '❌ Não foi possível excluir. Tente novamente.');
+    }
+  });
+</script>

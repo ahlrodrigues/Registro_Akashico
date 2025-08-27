@@ -1,29 +1,29 @@
+<!-- pages/assistidos.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Relatório de Assistidos</title>
+  <link rel="stylesheet" href="../styles/style.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 </head>
 <body>
-  <h2>Assistidos</h2>
-  <table id="assistidos" class="display" style="width:100%">
-    <thead><tr><th>Nome</th><th>Grau</th><th>Função</th></tr></thead>
-    <tbody></tbody>
-  </table>
+  <div id="cabecalho-container"></div>
 
-  <script>
-    window.api.listarAssistidos().then(data => {
-      const tbody = document.querySelector('#assistidos tbody');
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${row.nome}</td><td>${row.grau}</td><td>${row.funcao}</td>`;
-        tbody.appendChild(tr);
-      });
-      new DataTable('#assistidos');
-    });
-  </script>
+  <main>
+    <h2>Assistidos</h2>
+    <table id="assistidos" class="display" style="width:100%">
+      <thead><tr><th>Nome</th><th>Grau</th><th>Função</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <div id="rodape-container"></div>
+
+  <!-- ✅ Caminhos corrigidos com base na pasta /pages -->
+  <script type="module" src="../scripts/incluirComponentes.js"></script>
+  <script type="module" src="../scripts/assistidos.js"></script>
 </body>
 </html>

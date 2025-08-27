@@ -1,187 +1,304 @@
-import { abrirModalCadastro } from './modalCadastro.js';
+// =====================================================
+// PATH: frontend/js/relatorio.js
+// =====================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Referências à DOM
-  const tabela = document.getElementById('tabelaUsuarios').getElementsByTagName('tbody')[0];
-  const campoBusca = document.getElementById('busca');
-  const selecionarTodos = document.getElementById('selecionarTodos');
-  const btnVer = document.getElementById('btnVer');
-  const btnImprimirPasse = document.getElementById('btnImprimirPasse');
+/**
+ * Relatório de Assistidos + Modal de Calendário de Presenças
+ * - Integra a UI do relatório com o calendário mensal de presenças.
+ * - NÃO usa window.require (contextIsolation: true).
+ * - Usa as funções do módulo calendarioPresencas.js (renderer) que,
+ *   por sua vez, chamam window.api.* expostas pelo preload.
+ *
+ * Requisitos no HTML:
+ * - Tabela com id="tabelaUsuarios" (tbody).
+ * - Checkbox por linha com class="selecionarLinha" e data-id no assistido.
+ * - Botão "Abrir Calendário" com id="btnCalendario".
+ * - Modal com id="modalCalendario" contendo:
+ *      #calTitle (título mês/ano)
+ *      #calGrid  (grade dos dias)
+ *      #calPrev  (botão mês anterior)
+ *      #calNext  (botão próximo mês)
+ *      #calClose (fechar)
+ * - style.css aplica o visual; textos podem vir do i18n (pasta i18n/).
+ */
 
-  // Desabilita os botões ao carregar
-  btnVer.disabled = true;
-  btnImprimirPasse.disabled = true;
+import {
+  carregarPresencasDoMes,
+  marcarPresenca,
+  desmarcarPresenca,
+} from "./calendarioPresencas.js";
 
-  /**
-   * Atualiza o estado dos botões com base na seleção
-   */
-  function atualizarEstadoDosBotoes() {
-    const selecionados = tabela.querySelectorAll('.selecionarLinha:checked');
-    const habilitar = selecionados.length === 1;
-    btnVer.disabled = !habilitar;
-    btnImprimirPasse.disabled = !habilitar;
+// ---------------------------
+// Referências de elementos
+// ---------------------------
+const tabelaTbody = document.querySelector("#tabelaUsuarios tbody");
+const btnCalendario = document.getElementById("btnCalendario");
+
+// Elementos do modal de calendário
+const modal = document.getElementById("modalCalendario");
+const calTitle = document.getElementById("calTitle");
+const calGrid = document.getElementById("calGrid");
+const calPrev = document.getElementById("calPrev");
+const calNext = document.getElementById("calNext");
+const calClose = document.getElementById("calClose");
+
+// ---------------------------
+// Estado do calendário
+// ---------------------------
+let estado = {
+  assistidoId: null,
+  ano: null,
+  mes: null, // 1..12
+  // Set com strings "YYYY-MM-DD" dos dias presentes
+  presencasSet: new Set(),
+};
+
+// ---------------------------
+// Utilidades de i18n
+// ---------------------------
+function obterNomeMes(idxMes1a12) {
+  // Tenta pegar do i18n global (se existir), senão usa fallback PT
+  const fallback = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+  ];
+  // Ex.: window.i18n?.months?.[lang]?  — aqui deixamos simples
+  return fallback[idxMes1a12 - 1] || String(idxMes1a12);
+}
+
+function formatarISO(ano, mes1a12, dia) {
+  const m = String(mes1a12).padStart(2, "0");
+  const d = String(dia).padStart(2, "0");
+  return `${ano}-${m}-${d}`;
+}
+
+// ---------------------------
+// Seleção no relatório
+// ---------------------------
+/**
+ * Retorna o ID do assistido marcado (garante apenas 1 selecionado).
+ * Se houver 0 ou >1 selecionados, retorna null.
+ */
+function obterAssistidoSelecionado() {
+  const marcados = tabelaTbody.querySelectorAll('.selecionarLinha:checked');
+  if (marcados.length !== 1) return null;
+  const id = Number(marcados[0].dataset.id);
+  return Number.isInteger(id) ? id : null;
+}
+
+// ---------------------------
+// Render do calendário
+// ---------------------------
+/**
+ * Renderiza o grid do mês corrente (estado.ano/estado.mes).
+ * Marca os dias com presença usando a classe 'presente'.
+ * Permite clique para alternar (marcar/desmarcar) presença.
+ */
+function renderizarCalendario() {
+  const { ano, mes, presencasSet } = estado;
+
+  // Cabeçalho
+  calTitle.textContent = `${obterNomeMes(mes)} de ${ano}`;
+
+  // Limpa grid
+  calGrid.innerHTML = "";
+
+  // Descobre o primeiro dia da semana do mês e total de dias
+  const primeiro = new Date(ano, mes - 1, 1);
+  const inicioSemana = primeiro.getDay(); // 0=Dom,1=Seg,...
+  const totalDias = new Date(ano, mes, 0).getDate();
+
+  // Pode ajustar a semana para iniciar em segunda (opcional)
+  // Aqui manteremos iniciado no domingo (compatível com getDay()).
+
+  // Cria "blocos vazios" antes do dia 1 (offset)
+  for (let i = 0; i < inicioSemana; i++) {
+    const vazio = document.createElement("div");
+    vazio.className = "cal-dia cal-dia--vazio";
+    calGrid.appendChild(vazio);
   }
 
-  /**
-   * Carrega os usuários e popula a tabela
-   */
-  async function carregarRelatorio() {
-    try {
-      const usuarios = await window.api.listarUsuarios(false);
-      tabela.innerHTML = '';
+  // Cria um bloco para cada dia do mês
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = formatarISO(ano, mes, dia);
+    const cel = document.createElement("button");
+    cel.className = "cal-dia";
+    cel.type = "button";
+    cel.dataset.date = iso;
+    cel.textContent = String(dia);
 
-      usuarios.forEach(usuario => {
-        const linha = tabela.insertRow();
-
-        // [0] Checkbox
-        const celulaCheckbox = linha.insertCell();
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.classList.add('selecionarLinha');
-        checkbox.dataset.id = usuario.id;
-        celulaCheckbox.appendChild(checkbox);
-
-        // A cada checkbox individual, escuta mudanças
-        checkbox.addEventListener('change', atualizarEstadoDosBotoes);
-
-        // [1] ID
-        linha.insertCell().textContent = usuario.id;
-
-        // [2] Nome
-        linha.insertCell().textContent = usuario.nome;
-
-        // [3] Apelido
-        linha.insertCell().textContent = usuario.apelido || '';
-
-        // [4] Telefone
-        linha.insertCell().textContent = usuario.telefone || '';
-
-        // [5] Email
-        linha.insertCell().textContent = usuario.email || '';
-
-        // [6] Grau
-        linha.insertCell().textContent = usuario.grau || '';
-
-        // [7] Status
-        linha.insertCell().textContent = usuario.status || '';
-      });
-
-      atualizarEstadoDosBotoes(); // Garante estado correto após recarregar
-
-    } catch (err) {
-      console.error('Erro ao carregar usuários:', err);
-    }
-  }
-
-  /**
-   * Filtro de busca por nome
-   */
-  campoBusca?.addEventListener('input', () => {
-    const termo = campoBusca.value.toLowerCase();
-    const linhas = tabela.querySelectorAll('tr');
-    linhas.forEach(linha => {
-      const nome = linha.cells[2].textContent.toLowerCase();
-      linha.style.display = nome.includes(termo) ? '' : 'none';
-    });
-  });
-
-  /**
-   * Selecionar/Deselecionar todos os checkboxes
-   */
-  selecionarTodos?.addEventListener('change', () => {
-    const checkboxes = tabela.querySelectorAll('.selecionarLinha');
-    checkboxes.forEach(cb => cb.checked = selecionarTodos.checked);
-    atualizarEstadoDosBotoes();
-  });
-
-  /**
-   * Ação do botão Ver
-   */
-  btnVer?.addEventListener('click', () => {
-    const selecionados = document.querySelectorAll(".selecionarLinha:checked");
-
-    if (selecionados.length !== 1) {
-      exibirAlerta("Selecione exatamente um registro para visualizar.");
-      return;
+    if (presencasSet.has(iso)) {
+      cel.classList.add("presente");
+      cel.setAttribute("aria-pressed", "true");
+      cel.title = "Presença registrada";
+    } else {
+      cel.setAttribute("aria-pressed", "false");
+      cel.title = "Clique para marcar presença";
     }
 
-    const id = selecionados[0].dataset.id;
-    if (!id) {
-      exibirAlerta("Erro: ID do usuário não encontrado.");
-      return;
-    }
+    // Clique para alternar presença
+    cel.addEventListener("click", async () => {
+      const tem = presencasSet.has(iso);
+      // Otimista: atualiza visual primeiro
+      cel.disabled = true;
 
-    abrirModalCadastro(Number(id));
-  });
-
-  /**
-   * Ação do botão Imprimir Passe
-   */
-  btnImprimirPasse?.addEventListener('click', async () => {
-    const selecionados = document.querySelectorAll(".selecionarLinha:checked");
-
-    if (selecionados.length !== 1) {
-      exibirAlerta("Selecione exatamente um assistido para imprimir o passe.");
-      return;
-    }
-
-    const id = selecionados[0].dataset.id;
-    if (!id) {
-      exibirAlerta("Erro: ID do assistido não encontrado.");
-      return;
-    }
-
-    try {
-      const resposta = await window.api.registrarPasse(Number(id));
-      if (resposta.sucesso) {
-        exibirAlerta(`✅ Passe registrado para <strong>${resposta.nome}</strong><br>Tipo: <strong>${resposta.tipoPasse}</strong>`);
-      } else {
-        exibirAlerta(`❌ Erro: ${resposta.erro}`);
+      try {
+        let ok = false;
+        if (!tem) {
+          ok = await marcarPresenca(estado.assistidoId, iso);
+          if (ok) {
+            presencasSet.add(iso);
+            cel.classList.add("presente");
+            cel.setAttribute("aria-pressed", "true");
+            cel.title = "Presença registrada";
+          }
+        } else {
+          ok = await desmarcarPresenca(estado.assistidoId, iso);
+          if (ok) {
+            presencasSet.delete(iso);
+            cel.classList.remove("presente");
+            cel.setAttribute("aria-pressed", "false");
+            cel.title = "Clique para marcar presença";
+          }
+        }
+      } catch (e) {
+        console.error("[Calendário] Falha ao alternar presença:", e);
+      } finally {
+        cel.disabled = false;
       }
-    } catch (err) {
-      exibirAlerta(`❌ Falha de comunicação: ${err.message}`);
-    }
-  });
-
-  /**
-   * Exibe alerta no modal (temporário)
-   */
-  function exibirAlerta(mensagem) {
-    const modal = document.getElementById("modalCadastroUsuario");
-    const form = modal.querySelector("form");
-    const titulo = modal.querySelector("h2");
-    const conteudoModal = modal.querySelector(".modal-box");
-
-    form.classList.add("hidden");
-    titulo.textContent = "Atenção";
-
-    // Remove alertas anteriores
-    const alertas = conteudoModal.querySelectorAll(".alerta-temporaria");
-    alertas.forEach(el => el.remove());
-
-    const alertaDiv = document.createElement("div");
-    alertaDiv.classList.add("alerta-temporaria");
-    alertaDiv.innerHTML = `
-      <p style="margin: 20px 0; text-align: center;">${mensagem}</p>
-      <div style="text-align: center;">
-        <button class="fechar-alerta">OK</button>
-      </div>
-    `;
-    conteudoModal.appendChild(alertaDiv);
-
-    modal.classList.remove("hidden");
-
-    alertaDiv.querySelector(".fechar-alerta").addEventListener("click", () => {
-      alertaDiv.remove();
-      form.classList.remove("hidden");
-      titulo.textContent = "Editar Cadastro";
-      modal.classList.add("hidden");
     });
+
+    calGrid.appendChild(cel);
+  }
+}
+
+/**
+ * Carrega do backend as presenças do mês corrente e re-renderiza.
+ */
+async function carregarMesEAtualizar() {
+  const { assistidoId, ano, mes } = estado;
+  const lista = await carregarPresencasDoMes(assistidoId, ano, mes);
+  estado.presencasSet = new Set((lista || []).map((r) => r.data));
+  renderizarCalendario();
+}
+
+// ---------------------------
+// Navegação do mês no modal
+// ---------------------------
+calPrev?.addEventListener("click", () => {
+  let { ano, mes } = estado;
+  mes -= 1;
+  if (mes < 1) {
+    mes = 12;
+    ano -= 1;
+  }
+  estado.mes = mes;
+  estado.ano = ano;
+  carregarMesEAtualizar();
+});
+
+calNext?.addEventListener("click", () => {
+  let { ano, mes } = estado;
+  mes += 1;
+  if (mes > 12) {
+    mes = 1;
+    ano += 1;
+  }
+  estado.mes = mes;
+  estado.ano = ano;
+  carregarMesEAtualizar();
+});
+
+calClose?.addEventListener("click", () => {
+  fecharModalCalendario();
+});
+
+// ---------------------------
+// Abertura/fechamento do modal
+// ---------------------------
+function abrirModalCalendario() {
+  if (!modal) return;
+  modal.classList.add("ativo");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function fecharModalCalendario() {
+  if (!modal) return;
+  modal.classList.remove("ativo");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+// Fecha com ESC
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && modal?.classList.contains("ativo")) {
+    fecharModalCalendario();
+  }
+});
+
+// ---------------------------
+// Botão "Abrir Calendário"
+// ---------------------------
+btnCalendario?.addEventListener("click", async () => {
+  // Garante seleção de 1 assistido
+  const selecionado = obterAssistidoSelecionado();
+  if (!selecionado) {
+    // Aqui você pode usar seu modalAviso padrão
+    alert("Selecione exatamente 1 assistido para abrir o calendário.");
+    return;
   }
 
-  // Inicializa o relatório ao carregar a página
-  carregarRelatorio();
+  // Define estado inicial com mês atual
+  const agora = new Date();
+  estado.assistidoId = selecionado;
+  estado.ano = agora.getFullYear();
+  estado.mes = agora.getMonth() + 1;
 
-  // Expõe para o modal
-  window.carregarRelatorio = carregarRelatorio;
+  abrirModalCalendario();
+  await carregarMesEAtualizar();
+});
+
+// ---------------------------
+// (Opcional) Carregar tabela
+// ---------------------------
+// Se você já tem outro módulo que popula a tabela, mantenha.
+// Abaixo fica apenas um exemplo de "placeholder" caso queira:
+export async function carregarRelatorio() {
+  // Exemplo: se já existir window.api.listarUsuarios(false)
+  if (!window.api?.listarUsuarios) return;
+
+  try {
+    const usuarios = await window.api.listarUsuarios(false);
+    tabelaTbody.innerHTML = "";
+
+    usuarios.forEach((usuario) => {
+      const linha = tabelaTbody.insertRow();
+
+      // [0] Checkbox
+      const c0 = linha.insertCell();
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.className = "selecionarLinha";
+      chk.dataset.id = usuario.id;
+      c0.appendChild(chk);
+
+      // [1] ID
+      linha.insertCell().textContent = usuario.id;
+
+      // [2] Nome
+      linha.insertCell().textContent = usuario.nome || usuario.aluno || "(sem nome)";
+
+      // [3] Grau / Tipo
+      linha.insertCell().textContent = usuario.grau || usuario.tipo || "";
+
+      // [4] Email / Contato
+      linha.insertCell().textContent = usuario.email || usuario.whatsapp || usuario.telefone || "";
+    });
+  } catch (err) {
+    console.error("[Relatório] Erro ao carregar usuários:", err);
+  }
+}
+
+// Auto‑init (se desejar)
+document.addEventListener("DOMContentLoaded", () => {
+  // carregarRelatorio(); // descomente se quiser carregar aqui
 });

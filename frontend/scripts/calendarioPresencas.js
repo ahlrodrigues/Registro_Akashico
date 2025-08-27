@@ -1,106 +1,153 @@
-// calendarioPresencas.js
-const { ipcRenderer } = window.require("electron");
+// ==============================================
+// PATH: frontend/js/calendarioPresencas.js
+// ==============================================
 
-let mesAtual = new Date().getMonth();
-let anoAtual = new Date().getFullYear();
-let assistidoIdAtual = null;
-let presencas = [];
+/**
+ * Calendário de Presenças (Renderer)
+ * - NÃO usa window.require (contextIsolation: true)
+ * - Usa window.api.* (expostos no preload)
+ * - Exporta funções públicas para integração:
+ *   - carregarPresencasDoMes(assistidoId, ano, mes)
+ *   - marcarPresenca(assistidoId, dataISO)
+ *   - desmarcarPresenca(assistidoId, dataISO)
+ *   - renderizarCalendario(container, estado)  <-- exportado p/ compat
+ *   - carregarMesEAtualizar(estado, atualizaUI) <-- util p/ recarregar mês
+ */
 
-export async function renderizarCalendario(assistidoId, ano = anoAtual, mes = mesAtual) {
-  assistidoIdAtual = assistidoId;
-  anoAtual = ano;
-  mesAtual = mes;
-
-  presencas = await obterPresencasDoBanco(assistidoIdAtual, anoAtual, mesAtual);
-
-  const corpo = document.getElementById("corpo-calendario");
-  const titulo = document.getElementById("mes-ano-atual");
-
-  const nomesMeses = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+// ===== Utilidades simples (i18n pode substituir) =====
+function obterNomeMes(idxMes1a12) {
+  const fallback = [
+    "janeiro","fevereiro","março","abril","maio","junho",
+    "julho","agosto","setembro","outubro","novembro","dezembro",
   ];
+  return fallback[idxMes1a12 - 1] || String(idxMes1a12);
+}
 
-  titulo.textContent = `${nomesMeses[mesAtual]} ${anoAtual}`;
-  corpo.innerHTML = "";
+function formatarISO(ano, mes1a12, dia) {
+  const m = String(mes1a12).padStart(2, "0");
+  const d = String(dia).padStart(2, "0");
+  return `${ano}-${m}-${d}`;
+}
 
-  const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay();
-  const diasNoMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
+// ===== API com o backend via preload =====
+export async function carregarPresencasDoMes(assistidoId, ano, mes) {
+  const resp = await window.api.buscarPresencas(assistidoId, ano, mes);
+  if (!resp?.sucesso) throw new Error(resp?.erro || "Falha ao buscar presenças.");
+  return resp.dados; // [{ data: "YYYY-MM-DD", hora: "HH:MM" }, ...]
+}
 
-  let linha = document.createElement("tr");
+export async function marcarPresenca(assistidoId, dataISO) {
+  const resp = await window.api.adicionarPresenca(assistidoId, dataISO);
+  if (!resp?.sucesso) throw new Error(resp?.erro || "Falha ao adicionar presença.");
+  return true;
+}
 
-  for (let i = 0; i < primeiroDia; i++) {
-    const vazio = document.createElement("td");
-    vazio.classList.add("vazio");
-    linha.appendChild(vazio);
+export async function desmarcarPresenca(assistidoId, dataISO) {
+  const resp = await window.api.removerPresenca(assistidoId, dataISO);
+  if (!resp?.sucesso) throw new Error(resp?.erro || "Falha ao remover presença.");
+  return true;
+}
+
+/**
+ * Renderiza o calendário em um container fornecido.
+ * @param {HTMLElement} container - elemento que contém #calTitle e #calGrid
+ * @param {Object} estado - { assistidoId, ano, mes, presencasSet, onToggle? }
+ *   - presencasSet: Set<string> com datas ISO "YYYY-MM-DD"
+ *   - onToggle: (iso, temAntes:boolean)=>Promise<boolean>   // opcional callback
+ */
+export function renderizarCalendario(container, estado) {
+  const calTitle = container.querySelector("#calTitle");
+  const calGrid = container.querySelector("#calGrid");
+  const { ano, mes, presencasSet } = estado;
+
+  if (!calTitle || !calGrid) {
+    console.warn("[Calendário] Container inválido: faltam #calTitle ou #calGrid");
+    return;
   }
 
-  for (let dia = 1; dia <= diasNoMes; dia++) {
-    const dataStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-    const td = document.createElement("td");
-    td.textContent = dia;
+  // Título
+  calTitle.textContent = `${obterNomeMes(mes)} de ${ano}`;
 
-    const presenca = presencas.find(p => p.data === dataStr);
+  // Limpa grid
+  calGrid.innerHTML = "";
 
-    if (presenca) {
-      td.classList.add("presente");
-      td.setAttribute("data-tooltip", `Presente às ${presenca.hora || '---'}`);
+  // Datas
+  const primeiro = new Date(ano, mes - 1, 1);
+  const offset = primeiro.getDay();          // 0=Dom..6=Sáb
+  const totalDias = new Date(ano, mes, 0).getDate();
+
+  // Espaços vazios antes do dia 1
+  for (let i = 0; i < offset; i++) {
+    const vazio = document.createElement("div");
+    vazio.className = "cal-dia cal-dia--vazio";
+    calGrid.appendChild(vazio);
+  }
+
+  // Dias do mês
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = formatarISO(ano, mes, dia);
+    const cel = document.createElement("button");
+    cel.className = "cal-dia";
+    cel.type = "button";
+    cel.dataset.date = iso;
+    cel.textContent = String(dia);
+
+    const presente = presencasSet?.has?.(iso);
+    if (presente) {
+      cel.classList.add("presente");
+      cel.setAttribute("aria-pressed", "true");
+      cel.title = "Presença registrada";
     } else {
-      td.classList.add("ausente");
-      td.setAttribute("data-tooltip", "Ausente");
+      cel.setAttribute("aria-pressed", "false");
+      cel.title = "Clique para marcar presença";
     }
 
-    td.addEventListener("click", async () => {
-      if (td.classList.contains("presente")) {
-        await ipcRenderer.invoke("presencas:remover", {
-          assistidoId: assistidoIdAtual,
-          data: dataStr,
-        });
-      } else {
-        await ipcRenderer.invoke("presencas:adicionar", {
-          assistidoId: assistidoIdAtual,
-          data: dataStr,
-        });
+    // Toggle presença
+    cel.addEventListener("click", async () => {
+      cel.disabled = true;
+      try {
+        let ok = false;
+        if (typeof estado.onToggle === "function") {
+          // Se o chamador fornecer um callback assíncrono, usamos
+          ok = await estado.onToggle(iso, presente === true);
+        } else {
+          // Padrão: chama backend direto
+          ok = !presente
+            ? await marcarPresenca(estado.assistidoId, iso)
+            : await desmarcarPresenca(estado.assistidoId, iso);
+        }
+
+        if (ok) {
+          if (presente) {
+            presencasSet.delete(iso);
+            cel.classList.remove("presente");
+            cel.setAttribute("aria-pressed", "false");
+            cel.title = "Clique para marcar presença";
+          } else {
+            presencasSet.add(iso);
+            cel.classList.add("presente");
+            cel.setAttribute("aria-pressed", "true");
+            cel.title = "Presença registrada";
+          }
+        }
+      } catch (e) {
+        console.error("[Calendário] onToggle falhou:", e);
+      } finally {
+        cel.disabled = false;
       }
-      renderizarCalendario(assistidoIdAtual, anoAtual, mesAtual);
     });
 
-    linha.appendChild(td);
-
-    if ((primeiroDia + dia) % 7 === 0 || dia === diasNoMes) {
-      corpo.appendChild(linha);
-      linha = document.createElement("tr");
-    }
+    calGrid.appendChild(cel);
   }
 }
 
-document.getElementById("mes-anterior").addEventListener("click", () => {
-  mesAtual--;
-  if (mesAtual < 0) {
-    mesAtual = 11;
-    anoAtual--;
-  }
-  renderizarCalendario(assistidoIdAtual, anoAtual, mesAtual);
-});
-
-document.getElementById("mes-seguinte").addEventListener("click", () => {
-  mesAtual++;
-  if (mesAtual > 11) {
-    mesAtual = 0;
-    anoAtual++;
-  }
-  renderizarCalendario(assistidoIdAtual, anoAtual, mesAtual);
-});
-
-// 🔌 IPC: obter presenças do banco
-async function obterPresencasDoBanco(assistidoId, ano, mes) {
-  const retorno = await ipcRenderer.invoke("presencas:buscar", {
-    assistidoId,
-    ano,
-    mes: mes + 1 // mês 1-12
-  });
-
-  // Exemplo de retorno esperado:
-  // [{ data: "2025-07-03", hora: "19:04" }, ...]
-  return retorno || [];
+/**
+ * Utilitário: carrega do backend e re-renderiza, chamando um callback de UI.
+ * @param {Object} estado - { assistidoId, ano, mes, presencasSet }
+ * @param {(novoSet:Set<string>)=>void} atualizaUI - callback que deve chamar renderizarCalendario(...)
+ */
+export async function carregarMesEAtualizar(estado, atualizaUI) {
+  const lista = await carregarPresencasDoMes(estado.assistidoId, estado.ano, estado.mes);
+  estado.presencasSet = new Set((lista || []).map((r) => r.data));
+  if (typeof atualizaUI === "function") atualizaUI(estado.presencasSet);
 }

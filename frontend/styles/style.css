@@ -1,212 +1,33 @@
+/* ============================================
+   Caminho: frontend/styles/style.css
+   Objetivo: Estilos consolidados (sem duplicatas)
+   Notas:
+   - Mantido tema azul/white
+   - Removidos estilos redundantes (ex.: #mensagem, button global, modal antigo)
+   - Acrescentado feedback no modal (.modal-msg) com botão fechar
+   ============================================ */
+
+/* ===== Base ===== */
+:root {
+  --azul-escuro: #00008B;
+  --azul-escuro-hover: #000070;
+  --azul-claro: #E0FFFF;
+  --azul-ui: #f8fafd;
+}
+
+* { box-sizing: border-box; }
+
 body {
   font-family: Arial, sans-serif;
-  background-color: #E0FFFF;
-  color: #00008B;
+  background-color: var(--azul-claro);
+  color: var(--azul-escuro);
   margin: 0;
   padding: 0;
 }
 
-.botoes-centrais {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
+.hidden { display: none !important; }
 
-.botoes-centrais button {
-  padding: 8px 16px;
-  font-weight: bold;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  background-color: #00008B;
-  color: white;
-  transition: 0.2s;
-}
-
-.botoes-centrais button:hover {
-  background-color: #000070;
-}
-
-#busca {
-  width: 500px;
-  margin-left: 0;
-  margin-top: 20px;
-}
-
-
-button {
-  background-color: #00008B;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #000070;
-}
-
-/* ===== Calendário de Presenças ===== */
-#calendario-container {
-  margin-top: 1.5em;
-  padding: 1em;
-  border: 2px solid #00008B;
-  border-radius: 8px;
-  background-color: #f8fafd;
-}
-
-.calendario-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5em;
-}
-
-.calendario-header .btn-nav {
-  background: none;
-  border: none;
-  color: #00008B;
-  font-size: 1.5em;
-  cursor: pointer;
-  padding: 0 10px;
-}
-
-.calendario-header #mes-ano-atual {
-  font-weight: bold;
-  font-size: 1.2em;
-  color: #00008B;
-}
-
-.calendario-tabela {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 0.95em;
-}
-
-.calendario-tabela th {
-  background-color: #dceeff;
-  color: #00008B;
-  padding: 6px;
-  text-align: center;
-  border: 1px solid #c0e0f0;
-}
-
-.calendario-tabela td {
-  height: 40px;
-  text-align: center;
-  vertical-align: middle;
-  border: 1px solid #e0e0e0;
-  cursor: pointer;
-  position: relative;
-  background-color: #fff;
-}
-
-.calendario-tabela td:hover {
-  background-color: #f0f8ff;
-}
-
-.calendario-tabela td.presente {
-  background-color: #90ee90 !important; /* verde claro */
-  font-weight: bold;
-  color: #003300;
-}
-
-.calendario-tabela td.ausente {
-  background-color: #f8fafd;
-}
-
-.calendario-tabela td.vazio {
-  background-color: #f8fafd;
-  cursor: default;
-}
-
-.calendario-legenda {
-  font-size: 0.85em;
-  margin-top: 0.5em;
-  color: #00008B;
-  text-align: center;
-}
-
-/* Tooltip para mostrar horário */
-.calendario-tabela td[data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #00008B;
-  color: white;
-  padding: 5px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  z-index: 100;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-footer.rodape {
-  background-color: #00008B;
-  color: white;
-  padding: 1em;
-  text-align: center;
-  font-size: 0.95rem;
-}
-
-form {
-  background: white;
-  padding: 2em;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-form > * {
-  font-size: 1.1rem;
-  margin-bottom: 1em;
-}
-
-header.cabecalho {
-  background-color: #00008B;
-  color: white;
-  padding: 1em;
-  text-align: center;
-}
-
-header.cabecalho h1 {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-header.cabecalho nav {
-  margin-top: 0.5em;
-  font-size: 1.1rem;
-}
-
-header.cabecalho nav a {
-  color: white;
-  text-decoration: none;
-  margin: 0 0.5em;
-  font-weight: bold;
-}
-
-.hidden {
-  display: none !important;
-}
-
-input, select, button {
-  padding: 0.75em;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
+/* ===== Layout principais ===== */
 main {
   padding: 2em;
   display: flex;
@@ -215,94 +36,65 @@ main {
   flex-direction: column;
 }
 
-#mensagem {
-  font-weight: bold;
-  margin-top: 1em;
+header.cabecalho {
+  background-color: var(--azul-escuro);
+  color: white;
+  padding: 1em;
   text-align: center;
 }
+header.cabecalho h1 { margin: 0; font-size: 1.8rem; }
+header.cabecalho nav { margin-top: 0.5em; font-size: 1.1rem; }
+header.cabecalho nav a { color: white; text-decoration: none; margin: 0 0.5em; font-weight: bold; }
 
-.modal-alerta {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+footer.rodape {
+  background-color: var(--azul-escuro);
+  color: white;
+  padding: 1em;
+  text-align: center;
+  font-size: 0.95rem;
 }
 
-.modal-conteudo {
+/* ===== Formulários ===== */
+form {
   background: white;
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
-}
-
-#tabelaUsuarios {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 40px;
-}
-
-#tabelaUsuarios th,
-#tabelaUsuarios td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid #ccc;
-}
-
-#tabelaUsuarios tbody tr:nth-child(even) {
-  background-color: #f0f8ff;
-}
-
-#tabelaUsuarios tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-
-/* Modal de edição de usuário */
-.modal {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5); /* fundo escurecido */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-box {
-  background-color: white;
   padding: 2em;
-  border-radius: 12px;
-  max-width: 580px; /* aumentado de 500 para 700 */
-  width: 95%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 700px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
+form > * { font-size: 1.05rem; margin-bottom: 1em; }
 
-.form-group {
-  margin-bottom: 1rem;
-}
-
+.form-group { margin-bottom: 1rem; }
 .form-group label {
   display: block;
   font-weight: bold;
   margin-bottom: 0.25rem;
-  color: #00008B;
+  color: var(--azul-escuro);
 }
 
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1.5rem;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
 }
 
+input, select {
+  padding: 0.75em;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  background: #fff;
+  color: #202020;
+}
+
+/* ===== Botões ===== */
 .btn {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
@@ -312,21 +104,239 @@ main {
   border: none;
   width: 100%;
 }
+.btn-primary { background-color: var(--azul-escuro); color: white; }
+.btn-primary:hover { background-color: var(--azul-escuro-hover); }
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-danger:hover { background-color: #bb2d3b; }
+.btn-secondary { background-color: #4682B4; color: white; }
+.btn-secondary:hover { background-color: #3b6a9e; }
 
-.btn-primary {
-  background-color: #00008B;
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Botões centrais (ex.: na home) */
+.botoes-centrais {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+.botoes-centrais button {
+  padding: 8px 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--azul-escuro);
   color: white;
+  transition: 0.2s;
+}
+.botoes-centrais button:hover { background-color: var(--azul-escuro-hover); }
+
+/* Campo de busca */
+#busca { width: 500px; margin-left: 0; margin-top: 20px; }
+
+/* ===== Tabela de usuários ===== */
+#tabelaUsuarios {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  background: #fff;
+}
+#tabelaUsuarios th, #tabelaUsuarios td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ccc;
+}
+#tabelaUsuarios tbody tr:nth-child(even) { background-color: #f0f8ff; }
+#tabelaUsuarios tbody tr:nth-child(odd)  { background-color: #ffffff; }
+
+/* ===== Modal genérico ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal.hidden { display: none; }
+
+.modal-box {
+  background-color: white;
+  padding: 2em;
+  border-radius: 12px;
+  max-width: 580px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
-.btn-primary:hover {
-  background-color: #000070;
+/* ===== Mensagens dentro do modal ===== */
+.modal-msg {
+  margin: 0.5em 0 1em;
+  padding: 0.75em 1em;
+  border-radius: 6px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 0.95rem;
+}
+.modal-msg.ok   { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.modal-msg.erro { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.modal-msg.warn { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+.modal-msg.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+/* Botão fechar dentro da mensagem do modal */
+.modal-msg .close-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-weight: bold;
+  margin-left: 8px;
+  cursor: pointer;
+  color: inherit;
+}
+.modal-msg .close-btn:hover { text-decoration: underline; }
+
+/* ===== Calendário de Presenças ===== */
+#calendario-container {
+  margin-top: 1.5em;
+  padding: 1em;
+  border: 2px solid var(--azul-escuro);
+  border-radius: 8px;
+  background-color: var(--azul-ui);
+}
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5em;
+}
+.calendario-header .btn-nav {
+  background: none;
+  border: none;
+  color: var(--azul-escuro);
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0 10px;
+}
+.calendario-header #mes-ano-atual {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: var(--azul-escuro);
+}
+.calendario-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.95em;
+  background: #fff;
+}
+.calendario-tabela th {
+  background-color: #dceeff;
+  color: var(--azul-escuro);
+  padding: 6px;
+  text-align: center;
+  border: 1px solid #c0e0f0;
+}
+.calendario-tabela td {
+  height: 40px;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  position: relative;
+  background-color: #fff;
+}
+.calendario-tabela td:hover { background-color: #f0f8ff; }
+.calendario-tabela td.presente {
+  background-color: #90ee90 !important;
+  font-weight: bold;
+  color: #003300;
+}
+.calendario-tabela td.ausente { background-color: var(--azul-ui); }
+.calendario-tabela td.vazio   { background-color: var(--azul-ui); cursor: default; }
+.calendario-legenda {
+  font-size: 0.85em;
+  margin-top: 0.5em;
+  color: var(--azul-escuro);
+  text-align: center;
 }
 
-.btn-danger {
-  background-color: #dc3545;
+/* Tooltip no calendário */
+.calendario-tabela td[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--azul-escuro);
   color: white;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-.btn-danger:hover {
-  background-color: #bb2d3b;
+/* ===== Layout da página de cadastro ===== */
+.container {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* grade simples para o formulário de cadastro */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* grupos com legend */
+fieldset.grupo {
+  border: 1px solid #cfe3ff;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+fieldset.grupo legend {
+  padding: 0 6px;
+  font-weight: bold;
+  color: var(--azul-escuro);
+}
+
+/* ações do formulário: botões lado a lado */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* sobrescreve a largura 100% só dentro das ações,
+   para os botões não “sumirem”/quebrarem linha */
+.form-actions .btn {
+  width: auto;
+  min-width: 140px;
+}
+
+/* em telas bem pequenas, deixa empilhar bonito */
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .form-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
 }

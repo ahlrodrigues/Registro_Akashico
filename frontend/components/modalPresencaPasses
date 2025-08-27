@@ -1,0 +1,49 @@
+<!-- ✅ Modal para presença e marcação de passes -->
+<div id="modalPresencaPasses" class="modal hidden">
+  <div class="modal-box">
+
+    <h2 id="tituloPresencaPasses">Presenças e Passes</h2>
+
+    <!-- Nome do assistido (preenchido via JS) -->
+    <p><strong>Nome:</strong> <span id="nomeAssistidoPresenca">---</span></p>
+
+    <!-- Calendário -->
+    <div id="calendario-container">
+      <div class="calendario-header">
+        <button id="mes-anterior" class="btn-nav">&#9664;</button>
+        <span id="mes-ano-atual">Mês Atual</span>
+        <button id="mes-seguinte" class="btn-nav">&#9654;</button>
+      </div>
+
+      <table class="calendario-tabela">
+        <thead>
+          <tr>
+            <th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th>
+          </tr>
+        </thead>
+        <tbody id="corpo-calendario">
+          <!-- Gerado dinamicamente -->
+        </tbody>
+      </table>
+
+      <p class="calendario-legenda">
+        * Clique para marcar/desmarcar presença<br>
+        * Passe o mouse para ver o horário
+      </p>
+    </div>
+
+    <!-- Lista de passes -->
+    <div id="lista-passes" style="margin-top: 1.5em;">
+      <h3>Passes registrados</h3>
+      <ul id="passes-assistido" style="padding-left: 1em;">
+        <!-- Gerado dinamicamente -->
+      </ul>
+    </div>
+
+    <!-- Botões -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" id="btnFecharPresencaPasses">Fechar</button>
+    </div>
+
+  </div>
+</div>
