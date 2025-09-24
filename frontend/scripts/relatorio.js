@@ -64,7 +64,8 @@ async function buscarPresencas(id) {
 async function buscarPasses(id) {
   try {
     if (window.api?.passes?.listarPorAssistido) return await window.api.passes.listarPorAssistido(id);
-    if (window.api?.invoke)                     return await window.api.invoke("passes:listarPorAssistido", id);
+    if (window.api?.passes?.buscarPorAssistido) return await window.api.passes.buscarPorAssistido(id);
+    if (window.api?.invoke)                     return await window.api.invoke("passes:buscarPorAssistido", id);
     return [];
   } catch { return []; }
 }
@@ -104,8 +105,17 @@ function renderTabela(lista) {
     cb.checked = selecionados.has(u.id);
     cb.addEventListener("change", (e) => {
       const id = Number(e.target.dataset.id);
-      if (e.target.checked) selecionados.add(id);
-      else selecionados.delete(id);
+
+      if (e.target.checked) {
+        selecionados.clear();
+        selecionados.add(id);
+        $$("#tabelaUsuarios tbody input[type='checkbox']").forEach((outro) => {
+          if (outro !== e.target) outro.checked = false;
+        });
+      } else {
+        selecionados.delete(id);
+      }
+
       atualizarBotoes();
     });
     tdSel.appendChild(cb);
@@ -160,16 +170,25 @@ function aplicarBusca() {
 function atualizarBotoes() {
   const qnt = selecionados.size;
   $("#btnVer").disabled = qnt !== 1;
-  $("#btnImprimirPasse").disabled = qnt < 1;
+  $("#btnImprimirPasse").disabled = qnt !== 1;
 }
 
 function toggleSelecionarTodos(e) {
   const marcar = e.target.checked;
+
   selecionados.clear();
-  $$("#tabelaUsuarios tbody input[type='checkbox']").forEach((cb) => {
-    cb.checked = marcar;
-    if (marcar) selecionados.add(Number(cb.dataset.id));
+  $$("#tabelaUsuarios tbody input[type='checkbox']").forEach((cb, index) => {
+    const id = Number(cb.dataset.id);
+    if (marcar && index === 0) {
+      cb.checked = true;
+      selecionados.add(id);
+    } else {
+      cb.checked = false;
+    }
   });
+
+  if (!marcar) e.target.checked = false;
+
   atualizarBotoes();
 }
 

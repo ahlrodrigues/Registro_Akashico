@@ -12,12 +12,12 @@ const path = require("path");
 // Handlers (modularizados)
 const { registrarUsuarioHandlers }   = require("./backend/handlers/usuarioHandler");
 const { registerPresencasHandlers }  = require("./backend/handlers/presencasHandler"); // se existir
-// const { registrarPassesHandlers } = require("./backend/handlers/passesHandler");    // se existir
+const { registrarPasseHandlers }     = require("./backend/handlers/passesHandler");
 
 function bootHandlers() {
   try { registrarUsuarioHandlers(ipcMain);  } catch (e) { console.error("Usuarios IPC FAIL:", e); }
   try { registerPresencasHandlers?.(ipcMain); } catch (e) { console.error("Presencas IPC FAIL:", e); }
-  // try { registrarPassesHandlers?.(ipcMain); } catch (e) { console.error("Passes IPC FAIL:", e); }
+  try { registrarPasseHandlers?.(ipcMain); } catch (e) { console.error("Passes IPC FAIL:", e); }
 }
 
 function createWindow() {

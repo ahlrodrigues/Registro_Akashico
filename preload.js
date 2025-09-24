@@ -45,7 +45,8 @@ contextBridge.exposeInMainWorld("api", {
 
   // -------- PASSES (ajuste canais conforme seu handler)
   passes: {
-    listarPorAssistido:   (id)  => safeInvoke("passes:listarPorAssistido", id),
+    listarPorAssistido:   (id)  => safeInvoke("passes:buscarPorAssistido", id),
+    buscarPorAssistido:   (id)  => safeInvoke("passes:buscarPorAssistido", id),
     imprimirParaUsuarios: (ids) => safeInvoke("passes:imprimirParaUsuarios", ids),
     registrar:            (idAssistido) => safeInvoke("passes:registrar", idAssistido),
   },
@@ -57,7 +58,7 @@ contextBridge.exposeInMainWorld("api", {
   atualizarUsuario:   (usuario)             => safeInvoke("usuario:atualizar", usuario),
   excluirUsuario:     (id)                  => safeInvoke("usuario:excluir", id),
 
-  buscarPassesPorAssistido: (id) => safeInvoke("passes:listarPorAssistido", id),
+  buscarPassesPorAssistido: (id) => safeInvoke("passes:buscarPorAssistido", id),
   registrarPasse:           (idAssistido) => safeInvoke("passes:registrar", idAssistido),
 
   listarAssistidos: () => safeInvoke("assistidos:listar"),
