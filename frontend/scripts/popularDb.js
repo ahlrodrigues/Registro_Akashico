@@ -1,50 +1,32 @@
-const fs = require('fs');
-const path = require('path');
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
+// ============================================
+// Caminho: frontend/scripts/popularDb.js
+// Objetivo: Popular o banco com dados de exemplo (dev)
+// Alinhado ao schema atual de "usuarios":
+// id, nomeCompleto, nomeSocial, dataNascimento, cep, logradouro, numero,
+// bairro, cidade, estado, telefone, email, redeSocial, status
+// ============================================
 
-const baseDir = path.join(process.env.APPDATA || path.join(process.env.HOME, '.config'), 'seara-de-luz');
-const dbPath = '/home/ahlr/seara-de-luz/usuarios.db';
+async function popularUsuariosDev() {
+  try {
+    const usuariosSeed = [
+      { nomeCompleto: "João da Luz",  nomeSocial: "Joãozinho",  telefone: "11988887777", email: "joao@example.com",  status: "ativo" },
+      { nomeCompleto: "Maria Clara",  nomeSocial: "Clarinha",   telefone: "11977776666", email: "maria@example.com", status: "ativo" },
+      { nomeCompleto: "Pedro Auxiliado", nomeSocial: "Pedrinho", telefone: "11999994444", email: "pedro@example.com", status: "ativo" },
+      { nomeCompleto: "Ana Luz",      nomeSocial: "Aninha",     telefone: "11911112222", email: "ana@example.com",   status: "ativo" },
+    ];
 
-// Garante que a pasta existe
-if (!fs.existsSync(baseDir)) {
-  fs.mkdirSync(baseDir, { recursive: true });
-}
-
-async function popularBanco() {
-  const db = await open({ filename: dbPath, driver: sqlite3.Database });
-
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
-      apelido TEXT,
-      grau TEXT NOT NULL,
-      telefone TEXT,
-      email TEXT,
-      status TEXT DEFAULT 'ativo'
-    )
-  `);
-
-  const usuarios = [
-    { nome: 'João da Luz', apelido: 'Joãozinho', grau: 'servidor', telefone: '11988887777', email: 'joao@example.com' },
-    { nome: 'Maria Clara', apelido: 'Clarinha', grau: 'discípulo', telefone: '11977776666', email: 'maria@example.com' },
-    { nome: 'Pedro Auxiliado', apelido: 'Pedrinho', grau: 'assistido', telefone: '11999994444', email: 'pedro@example.com' },
-    { nome: 'Ana Luz', apelido: 'Aninha', grau: 'assistido', telefone: '11911112222', email: 'ana@example.com' }
-  ];
-
-  for (const u of usuarios) {
-    await db.run(
-      `INSERT INTO usuarios (nome, apelido, grau, telefone, email, status)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [u.nome, u.apelido, u.grau, u.telefone, u.email, 'ativo']
-    );
+    if (window.api?.usuarios?.seed) {
+      return await window.api.usuarios.seed(usuariosSeed);
+    }
+    if (window.api?.invoke) {
+      for (const u of usuariosSeed) await window.api.invoke("usuario:cadastrar", u);
+      return { ok: true, total: usuariosSeed.length };
+    }
+    throw new Error("Nenhuma função de seed/cadastro disponível pelo preload.");
+  } catch (e) {
+    console.error("Erro ao popular usuários DEV:", e);
+    return { ok: false, erro: String(e) };
   }
-
-  console.log('✅ Banco populado com sucesso!');
-  await db.close();
 }
 
-popularBanco().catch(err => {
-  console.error('❌ Erro ao popular banco:', err);
-});
+window.popularUsuariosDev = popularUsuariosDev;

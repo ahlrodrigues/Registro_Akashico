@@ -1,304 +1,324 @@
-// =====================================================
-// PATH: frontend/js/relatorio.js
-// =====================================================
+// ============================================
+// Caminho: frontend/scripts/relatorio.js
+// Objetivo: Lógica do relatório (lista, busca, seleção, modal, salvar, excluir, imprimir)
+// Nota: “Apelido” usa nomeSocial do banco.
+// ============================================
 
-/**
- * Relatório de Assistidos + Modal de Calendário de Presenças
- * - Integra a UI do relatório com o calendário mensal de presenças.
- * - NÃO usa window.require (contextIsolation: true).
- * - Usa as funções do módulo calendarioPresencas.js (renderer) que,
- *   por sua vez, chamam window.api.* expostas pelo preload.
- *
- * Requisitos no HTML:
- * - Tabela com id="tabelaUsuarios" (tbody).
- * - Checkbox por linha com class="selecionarLinha" e data-id no assistido.
- * - Botão "Abrir Calendário" com id="btnCalendario".
- * - Modal com id="modalCalendario" contendo:
- *      #calTitle (título mês/ano)
- *      #calGrid  (grade dos dias)
- *      #calPrev  (botão mês anterior)
- *      #calNext  (botão próximo mês)
- *      #calClose (fechar)
- * - style.css aplica o visual; textos podem vir do i18n (pasta i18n/).
- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-import {
-  carregarPresencasDoMes,
-  marcarPresenca,
-  desmarcarPresenca,
-} from "./calendarioPresencas.js";
-
-// ---------------------------
-// Referências de elementos
-// ---------------------------
-const tabelaTbody = document.querySelector("#tabelaUsuarios tbody");
-const btnCalendario = document.getElementById("btnCalendario");
-
-// Elementos do modal de calendário
-const modal = document.getElementById("modalCalendario");
-const calTitle = document.getElementById("calTitle");
-const calGrid = document.getElementById("calGrid");
-const calPrev = document.getElementById("calPrev");
-const calNext = document.getElementById("calNext");
-const calClose = document.getElementById("calClose");
-
-// ---------------------------
-// Estado do calendário
-// ---------------------------
-let estado = {
-  assistidoId: null,
-  ano: null,
-  mes: null, // 1..12
-  // Set com strings "YYYY-MM-DD" dos dias presentes
-  presencasSet: new Set(),
-};
-
-// ---------------------------
-// Utilidades de i18n
-// ---------------------------
-function obterNomeMes(idxMes1a12) {
-  // Tenta pegar do i18n global (se existir), senão usa fallback PT
-  const fallback = [
-    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-  ];
-  // Ex.: window.i18n?.months?.[lang]?  — aqui deixamos simples
-  return fallback[idxMes1a12 - 1] || String(idxMes1a12);
+function norm(s) {
+  return (s ?? "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function formatarISO(ano, mes1a12, dia) {
-  const m = String(mes1a12).padStart(2, "0");
-  const d = String(dia).padStart(2, "0");
-  return `${ano}-${m}-${d}`;
-}
+let usuarios = [];
+let selecionados = new Set();
 
-// ---------------------------
-// Seleção no relatório
-// ---------------------------
-/**
- * Retorna o ID do assistido marcado (garante apenas 1 selecionado).
- * Se houver 0 ou >1 selecionados, retorna null.
- */
-function obterAssistidoSelecionado() {
-  const marcados = tabelaTbody.querySelectorAll('.selecionarLinha:checked');
-  if (marcados.length !== 1) return null;
-  const id = Number(marcados[0].dataset.id);
-  return Number.isInteger(id) ? id : null;
-}
-
-// ---------------------------
-// Render do calendário
-// ---------------------------
-/**
- * Renderiza o grid do mês corrente (estado.ano/estado.mes).
- * Marca os dias com presença usando a classe 'presente'.
- * Permite clique para alternar (marcar/desmarcar) presença.
- */
-function renderizarCalendario() {
-  const { ano, mes, presencasSet } = estado;
-
-  // Cabeçalho
-  calTitle.textContent = `${obterNomeMes(mes)} de ${ano}`;
-
-  // Limpa grid
-  calGrid.innerHTML = "";
-
-  // Descobre o primeiro dia da semana do mês e total de dias
-  const primeiro = new Date(ano, mes - 1, 1);
-  const inicioSemana = primeiro.getDay(); // 0=Dom,1=Seg,...
-  const totalDias = new Date(ano, mes, 0).getDate();
-
-  // Pode ajustar a semana para iniciar em segunda (opcional)
-  // Aqui manteremos iniciado no domingo (compatível com getDay()).
-
-  // Cria "blocos vazios" antes do dia 1 (offset)
-  for (let i = 0; i < inicioSemana; i++) {
-    const vazio = document.createElement("div");
-    vazio.className = "cal-dia cal-dia--vazio";
-    calGrid.appendChild(vazio);
-  }
-
-  // Cria um bloco para cada dia do mês
-  for (let dia = 1; dia <= totalDias; dia++) {
-    const iso = formatarISO(ano, mes, dia);
-    const cel = document.createElement("button");
-    cel.className = "cal-dia";
-    cel.type = "button";
-    cel.dataset.date = iso;
-    cel.textContent = String(dia);
-
-    if (presencasSet.has(iso)) {
-      cel.classList.add("presente");
-      cel.setAttribute("aria-pressed", "true");
-      cel.title = "Presença registrada";
-    } else {
-      cel.setAttribute("aria-pressed", "false");
-      cel.title = "Clique para marcar presença";
-    }
-
-    // Clique para alternar presença
-    cel.addEventListener("click", async () => {
-      const tem = presencasSet.has(iso);
-      // Otimista: atualiza visual primeiro
-      cel.disabled = true;
-
-      try {
-        let ok = false;
-        if (!tem) {
-          ok = await marcarPresenca(estado.assistidoId, iso);
-          if (ok) {
-            presencasSet.add(iso);
-            cel.classList.add("presente");
-            cel.setAttribute("aria-pressed", "true");
-            cel.title = "Presença registrada";
-          }
-        } else {
-          ok = await desmarcarPresenca(estado.assistidoId, iso);
-          if (ok) {
-            presencasSet.delete(iso);
-            cel.classList.remove("presente");
-            cel.setAttribute("aria-pressed", "false");
-            cel.title = "Clique para marcar presença";
-          }
-        }
-      } catch (e) {
-        console.error("[Calendário] Falha ao alternar presença:", e);
-      } finally {
-        cel.disabled = false;
-      }
-    });
-
-    calGrid.appendChild(cel);
-  }
-}
-
-/**
- * Carrega do backend as presenças do mês corrente e re-renderiza.
- */
-async function carregarMesEAtualizar() {
-  const { assistidoId, ano, mes } = estado;
-  const lista = await carregarPresencasDoMes(assistidoId, ano, mes);
-  estado.presencasSet = new Set((lista || []).map((r) => r.data));
-  renderizarCalendario();
-}
-
-// ---------------------------
-// Navegação do mês no modal
-// ---------------------------
-calPrev?.addEventListener("click", () => {
-  let { ano, mes } = estado;
-  mes -= 1;
-  if (mes < 1) {
-    mes = 12;
-    ano -= 1;
-  }
-  estado.mes = mes;
-  estado.ano = ano;
-  carregarMesEAtualizar();
-});
-
-calNext?.addEventListener("click", () => {
-  let { ano, mes } = estado;
-  mes += 1;
-  if (mes > 12) {
-    mes = 1;
-    ano += 1;
-  }
-  estado.mes = mes;
-  estado.ano = ano;
-  carregarMesEAtualizar();
-});
-
-calClose?.addEventListener("click", () => {
-  fecharModalCalendario();
-});
-
-// ---------------------------
-// Abertura/fechamento do modal
-// ---------------------------
-function abrirModalCalendario() {
-  if (!modal) return;
-  modal.classList.add("ativo");
-  modal.setAttribute("aria-hidden", "false");
-}
-
-function fecharModalCalendario() {
-  if (!modal) return;
-  modal.classList.remove("ativo");
-  modal.setAttribute("aria-hidden", "true");
-}
-
-// Fecha com ESC
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && modal?.classList.contains("ativo")) {
-    fecharModalCalendario();
-  }
-});
-
-// ---------------------------
-// Botão "Abrir Calendário"
-// ---------------------------
-btnCalendario?.addEventListener("click", async () => {
-  // Garante seleção de 1 assistido
-  const selecionado = obterAssistidoSelecionado();
-  if (!selecionado) {
-    // Aqui você pode usar seu modalAviso padrão
-    alert("Selecione exatamente 1 assistido para abrir o calendário.");
-    return;
-  }
-
-  // Define estado inicial com mês atual
-  const agora = new Date();
-  estado.assistidoId = selecionado;
-  estado.ano = agora.getFullYear();
-  estado.mes = agora.getMonth() + 1;
-
-  abrirModalCalendario();
-  await carregarMesEAtualizar();
-});
-
-// ---------------------------
-// (Opcional) Carregar tabela
-// ---------------------------
-// Se você já tem outro módulo que popula a tabela, mantenha.
-// Abaixo fica apenas um exemplo de "placeholder" caso queira:
-export async function carregarRelatorio() {
-  // Exemplo: se já existir window.api.listarUsuarios(false)
-  if (!window.api?.listarUsuarios) return;
-
+async function listarUsuarios() {
   try {
-    const usuarios = await window.api.listarUsuarios(false);
-    tabelaTbody.innerHTML = "";
-
-    usuarios.forEach((usuario) => {
-      const linha = tabelaTbody.insertRow();
-
-      // [0] Checkbox
-      const c0 = linha.insertCell();
-      const chk = document.createElement("input");
-      chk.type = "checkbox";
-      chk.className = "selecionarLinha";
-      chk.dataset.id = usuario.id;
-      c0.appendChild(chk);
-
-      // [1] ID
-      linha.insertCell().textContent = usuario.id;
-
-      // [2] Nome
-      linha.insertCell().textContent = usuario.nome || usuario.aluno || "(sem nome)";
-
-      // [3] Grau / Tipo
-      linha.insertCell().textContent = usuario.grau || usuario.tipo || "";
-
-      // [4] Email / Contato
-      linha.insertCell().textContent = usuario.email || usuario.whatsapp || usuario.telefone || "";
-    });
+    if (window.api?.usuarios?.listar) return await window.api.usuarios.listar();
+    if (window.api?.listarUsuarios)    return await window.api.listarUsuarios();
+    if (window.api?.invoke)            return await window.api.invoke("usuario:listar");
+    console.warn("⚠️ Nenhuma função para listar usuários encontrada.");
+    return [];
   } catch (err) {
-    console.error("[Relatório] Erro ao carregar usuários:", err);
+    console.error("Erro ao listar usuários:", err);
+    return [];
   }
 }
 
-// Auto‑init (se desejar)
-document.addEventListener("DOMContentLoaded", () => {
-  // carregarRelatorio(); // descomente se quiser carregar aqui
-});
+async function atualizarUsuario(payload) {
+  try {
+    const dados = { ...payload, nomeSocial: payload.apelido ?? "" };
+    delete dados.apelido;
+
+    if (window.api?.usuarios?.atualizar) return await window.api.usuarios.atualizar(dados);
+    if (window.api?.atualizarUsuario)    return await window.api.atualizarUsuario(dados);
+    if (window.api?.invoke)              return await window.api.invoke("usuario:atualizar", dados);
+    throw new Error("Sem função para atualizar usuário no preload.");
+  } catch (err) {
+    console.error("Erro ao atualizar usuário:", err);
+    throw err;
+  }
+}
+
+async function excluirUsuario(id) {
+  try {
+    if (window.api?.usuarios?.excluir) return await window.api.usuarios.excluir(id);
+    if (window.api?.excluirUsuario)    return await window.api.excluirUsuario(id);
+    if (window.api?.invoke)            return await window.api.invoke("usuario:excluir", id);
+    throw new Error("Sem função para excluir usuário no preload.");
+  } catch (err) {
+    console.error("Erro ao excluir usuário:", err);
+    throw err;
+  }
+}
+
+async function buscarPresencas(id) {
+  try {
+    if (window.api?.presencas?.listarPorUsuario) return await window.api.presencas.listarPorUsuario(id);
+    if (window.api?.invoke)                      return await window.api.invoke("presencas:listarPorUsuario", id);
+    return [];
+  } catch { return []; }
+}
+async function buscarPasses(id) {
+  try {
+    if (window.api?.passes?.listarPorAssistido) return await window.api.passes.listarPorAssistido(id);
+    if (window.api?.invoke)                     return await window.api.invoke("passes:listarPorAssistido", id);
+    return [];
+  } catch { return []; }
+}
+
+function cel(texto) {
+  const td = document.createElement("td");
+  td.textContent = texto ?? "";
+  return td;
+}
+
+function formatarDataParaInput(valor) {
+  if (!valor) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const iso = /^\d{4}-\d{2}-\d{2}/.exec(valor);
+  if (iso) return iso[0];
+  const partes = valor.split("/");
+  if (partes.length === 3) {
+    const [dia, mes, ano] = partes;
+    if (ano?.length === 4) {
+      return `${ano.padStart(4, "0")}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+    }
+  }
+  return valor;
+}
+
+function renderTabela(lista) {
+  const tbody = $("#tabelaUsuarios tbody");
+  tbody.innerHTML = "";
+
+  for (const u of lista) {
+    const tr = document.createElement("tr");
+
+    const tdSel = document.createElement("td");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.dataset.id = u.id;
+    cb.checked = selecionados.has(u.id);
+    cb.addEventListener("change", (e) => {
+      const id = Number(e.target.dataset.id);
+      if (e.target.checked) selecionados.add(id);
+      else selecionados.delete(id);
+      atualizarBotoes();
+    });
+    tdSel.appendChild(cb);
+
+    const valores = [
+      u.id,
+      u.nomeCompleto ?? "",
+      u.nomeSocial ?? "",
+      u.dataNascimento ?? "",
+      u.cep ?? "",
+      u.logradouro ?? "",
+      u.numero ?? "",
+      u.bairro ?? "",
+      u.cidade ?? "",
+      u.estado ?? "",
+      u.telefone ?? "",
+      u.email ?? "",
+      u.redeSocial ?? "",
+      u.status ?? "",
+    ];
+
+    tr.append(tdSel, ...valores.map(cel));
+    tbody.appendChild(tr);
+  }
+}
+
+function aplicarBusca() {
+  const termo = norm($("#busca").value);
+  if (!termo) { renderTabela(usuarios); return; }
+  const filtrados = usuarios.filter((u) => {
+    const alvo = [
+      u.id,
+      u.nomeCompleto,
+      u.nomeSocial,
+      u.dataNascimento,
+      u.cep,
+      u.logradouro,
+      u.numero,
+      u.bairro,
+      u.cidade,
+      u.estado,
+      u.telefone,
+      u.email,
+      u.redeSocial,
+      u.status,
+    ].join(" ");
+    return norm(alvo).includes(termo);
+  });
+  renderTabela(filtrados);
+}
+
+function atualizarBotoes() {
+  const qnt = selecionados.size;
+  $("#btnVer").disabled = qnt !== 1;
+  $("#btnImprimirPasse").disabled = qnt < 1;
+}
+
+function toggleSelecionarTodos(e) {
+  const marcar = e.target.checked;
+  selecionados.clear();
+  $$("#tabelaUsuarios tbody input[type='checkbox']").forEach((cb) => {
+    cb.checked = marcar;
+    if (marcar) selecionados.add(Number(cb.dataset.id));
+  });
+  atualizarBotoes();
+}
+
+function abrirModalEdicao(usuario) {
+  $("#usuarioId").value = usuario.id;
+  $("#nome").value = usuario.nomeCompleto ?? "";
+  $("#apelido").value = usuario.nomeSocial ?? "";
+  $("#dataNascimento").value = formatarDataParaInput(usuario.dataNascimento);
+  $("#cep").value = usuario.cep ?? "";
+  $("#logradouro").value = usuario.logradouro ?? "";
+  $("#numero").value = usuario.numero ?? "";
+  $("#bairro").value = usuario.bairro ?? "";
+  $("#cidade").value = usuario.cidade ?? "";
+  $("#estado").value = usuario.estado ?? "";
+  $("#telefone").value = usuario.telefone ?? "";
+  $("#email").value = usuario.email ?? "";
+  $("#redeSocial").value = usuario.redeSocial ?? "";
+  $("#status").value = usuario.status ?? "ativo";
+
+  carregarRelatoriosAuxiliares(usuario.id);
+  $("#modalCadastroUsuario").classList.remove("hidden");
+}
+
+function fecharModal() {
+  $("#modalCadastroUsuario").classList.add("hidden");
+  $("#formEditarUsuario").reset();
+  $("#usuarioId").value = "";
+  $("#relatorioPresencas").innerHTML = "";
+  $("#relatorioPasses").innerHTML = "";
+  $("#relatoriosExtras").classList.add("hidden");
+}
+
+async function carregarRelatoriosAuxiliares(idUsuario) {
+  const [pres, pass] = await Promise.all([buscarPresencas(idUsuario), buscarPasses(idUsuario)]);
+
+  $("#relatorioPresencas").innerHTML =
+    Array.isArray(pres) && pres.length
+      ? `<ul>${pres.map(p => `<li>${p.data} — ${p.presente ? "Presente" : "Ausente"}</li>`).join("")}</ul>`
+      : `<em>Nenhuma presença encontrada.</em>`;
+
+  $("#relatorioPasses").innerHTML =
+    Array.isArray(pass) && pass.length
+      ? `<ul>${pass.map(p => `<li>${p.data} ${p.hora ? `- ${p.hora}` : ""} — ${p.tipo ?? ""}</li>`).join("")}</ul>`
+      : `<em>Nenhum passe encontrado.</em>`;
+
+  $("#relatoriosExtras").classList.remove("hidden");
+}
+
+async function init() {
+  usuarios = await listarUsuarios();
+  renderTabela(usuarios);
+  atualizarBotoes();
+
+  $("#busca").addEventListener("input", aplicarBusca);
+  $("#selecionarTodos").addEventListener("change", toggleSelecionarTodos);
+
+  $("#btnVer").addEventListener("click", () => {
+    if (selecionados.size !== 1) return;
+    const id = [...selecionados][0];
+    const usuario = usuarios.find(u => Number(u.id) === Number(id));
+    if (usuario) abrirModalEdicao(usuario);
+  });
+
+  $("#btnFecharModal").addEventListener("click", fecharModal);
+
+  $("#formEditarUsuario").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const textoOuNulo = (sel) => {
+      const valor = $(sel).value.trim();
+      return valor.length ? valor : null;
+    };
+    const payload = {
+      id: Number($("#usuarioId").value),
+      nomeCompleto: $("#nome").value.trim(),
+      apelido: $("#apelido").value.trim(), // mapeado para nomeSocial
+      dataNascimento: $("#dataNascimento").value || null,
+      cep: textoOuNulo("#cep"),
+      logradouro: textoOuNulo("#logradouro"),
+      numero: textoOuNulo("#numero"),
+      bairro: textoOuNulo("#bairro"),
+      cidade: textoOuNulo("#cidade"),
+      estado: textoOuNulo("#estado"),
+      telefone: textoOuNulo("#telefone"),
+      email: textoOuNulo("#email"),
+      redeSocial: textoOuNulo("#redeSocial"),
+      status: $("#status").value
+    };
+
+    try {
+      await atualizarUsuario(payload);
+      const idx = usuarios.findIndex(u => Number(u.id) === payload.id);
+      if (idx >= 0) {
+        usuarios[idx] = {
+          ...usuarios[idx],
+          nomeCompleto: payload.nomeCompleto,
+          nomeSocial: payload.apelido,
+          dataNascimento: payload.dataNascimento,
+          cep: payload.cep,
+          logradouro: payload.logradouro,
+          numero: payload.numero,
+          bairro: payload.bairro,
+          cidade: payload.cidade,
+          estado: payload.estado,
+          telefone: payload.telefone,
+          email: payload.email,
+          redeSocial: payload.redeSocial,
+          status: payload.status
+        };
+      }
+      aplicarBusca();
+      fecharModal();
+    } catch (err) {
+      alert("Erro ao salvar alterações. Ver console.");
+      console.error(err);
+    }
+  });
+
+  $("#btnExcluir")?.addEventListener("click", async () => {
+    const id = Number($("#usuarioId").value);
+    if (!id) return;
+    if (!confirm("Tem certeza que deseja excluir este cadastro?")) return;
+    try {
+      await excluirUsuario(id);
+      usuarios = usuarios.filter(u => Number(u.id) !== Number(id));
+      selecionados.delete(id);
+      aplicarBusca();
+      fecharModal();
+    } catch (err) {
+      alert("Erro ao excluir. Ver console.");
+      console.error(err);
+    }
+  });
+
+  $("#btnImprimirPasse").addEventListener("click", async () => {
+    const ids = [...selecionados];
+    if (ids.length === 0) return;
+    try {
+      if (window.api?.passes?.imprimirParaUsuarios) {
+        await window.api.passes.imprimirParaUsuarios(ids);
+      } else if (window.api?.invoke) {
+        await window.api.invoke("passes:imprimirParaUsuarios", ids);
+      } else {
+        alert("A função de imprimir passe não está disponível.");
+      }
+    } catch (err) {
+      alert("Erro ao imprimir passes. Ver console.");
+      console.error(err);
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);

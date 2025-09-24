@@ -1,89 +1,67 @@
 // ============================================
 // Caminho: preload.js
 // Objetivo: Expor API segura ao renderer (contextIsolation: true)
-// Notas:
-// - Padroniza canais: 'usuario:*' (sem 'usuarios:*')
-// - Remove duplicidade de buscarUsuarioPorId
-// - listarUsuarios(apenasAtivos = true) → bate com o handler
-// - Helper safeInvoke com logs
+// Padrão exposto no window:
+//   - api.invoke(canal, ...args)
+//   - api.usuarios.*, api.presencas.*, api.passes.*
+//   - Funções "flat" legadas para compatibilidade
 // ============================================
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require("electron");
 
-/**
- * Invoca um canal IPC com try/catch + logs.
- * @template T
- * @param {string} channel
- * @param {...any} args
- * @returns {Promise<T>}
- */
+/** Invoca um canal IPC com try/catch + log de erro. */
 async function safeInvoke(channel, ...args) {
   try {
-    // Log enxuto para diagnóstico
-    // console.debug(`[PRELOAD] invoke: ${channel}`, args);
-    const result = await ipcRenderer.invoke(channel, ...args);
-    return result;
+    return await ipcRenderer.invoke(channel, ...args);
   } catch (err) {
     console.error(`[PRELOAD] IPC failed: ${channel}`, err);
     throw err;
   }
 }
 
-contextBridge.exposeInMainWorld('api', {
-  // ========== Usuários (novo schema) ==========
-  /**
-   * Cadastra usuário e retorna o ID criado.
-   * @param {object} dados
-   * @returns {Promise<number>}
-   */
-  cadastrarUsuario: (dados) => safeInvoke('usuario:cadastrar', dados),
+contextBridge.exposeInMainWorld("api", {
+  // -------- Fallback genérico (usado como último recurso pelo front)
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 
-  /**
-   * Lista usuários. Por padrão, apenas ativos.
-   * @param {boolean} [apenasAtivos=true]
-   * @returns {Promise<Array>}
-   */
-  listarUsuarios: (apenasAtivos = true) => safeInvoke('usuario:listar', apenasAtivos),
+  // -------- USUÁRIOS (alinha com usuarioHandler.js -> 'usuario:*')
+  usuarios: {
+    cadastrar:   (dados)               => safeInvoke("usuario:cadastrar", dados),
+    listar:      (apenasAtivos = true) => safeInvoke("usuario:listar",   apenasAtivos),
+    buscarPorId: (id)                  => safeInvoke("usuario:buscarPorId", id),
+    atualizar:   (usuario)             => safeInvoke("usuario:atualizar", usuario),
+    excluir:     (id)                  => safeInvoke("usuario:excluir",   id),
+    seed:        (lista)               => safeInvoke("usuario:seed",      lista),
+    // (opcional) se existir no main
+    login:       (email, whatsapp)     => safeInvoke("usuario:login", email, whatsapp),
+  },
 
-  /**
-   * Busca um usuário por ID.
-   * @param {number} id
-   * @returns {Promise<object|null>}
-   */
-  buscarUsuarioPorId: (id) => safeInvoke('usuario:buscarPorId', id),
+  // -------- PRESENÇAS (ajuste canais conforme seu handler)
+  presencas: {
+    listarPorUsuario: (usuarioId) => safeInvoke("presencas:listarPorUsuario", usuarioId),
+    buscar:           (payload)   => safeInvoke("presencas:buscar", payload),
+    adicionar:        (payload)   => safeInvoke("presencas:adicionar", payload),
+    remover:          (payload)   => safeInvoke("presencas:remover",   payload),
+  },
 
-  /**
-   * Atualiza um usuário existente.
-   * @param {object} usuario
-   * @returns {Promise<boolean>}
-   */
-  atualizarUsuario: (usuario) => safeInvoke('usuario:atualizar', usuario),
+  // -------- PASSES (ajuste canais conforme seu handler)
+  passes: {
+    listarPorAssistido:   (id)  => safeInvoke("passes:listarPorAssistido", id),
+    imprimirParaUsuarios: (ids) => safeInvoke("passes:imprimirParaUsuarios", ids),
+    registrar:            (idAssistido) => safeInvoke("passes:registrar", idAssistido),
+  },
 
-  /**
-   * Exclui um usuário por ID.
-   * @param {number} id
-   * @returns {Promise<boolean>}
-   */
-  excluirUsuario: (id) => safeInvoke('usuario:excluir', id),
+  // -------- Funções “flat” legadas (compatibilidade com código antigo)
+  cadastrarUsuario:   (dados)               => safeInvoke("usuario:cadastrar", dados),
+  listarUsuarios:     (apenasAtivos = true) => safeInvoke("usuario:listar", apenasAtivos),
+  buscarUsuarioPorId: (id)                  => safeInvoke("usuario:buscarPorId", id),
+  atualizarUsuario:   (usuario)             => safeInvoke("usuario:atualizar", usuario),
+  excluirUsuario:     (id)                  => safeInvoke("usuario:excluir", id),
 
-  // (Opcional) Login — mantenha apenas se houver handler correspondente
-  /**
-   * Login por email/whatsapp (se houver handler 'usuario:login').
-   * @param {string} email
-   * @param {string} whatsapp
-   */
-  loginUsuario: (email, whatsapp) => safeInvoke('usuario:login', email, whatsapp),
+  buscarPassesPorAssistido: (id) => safeInvoke("passes:listarPorAssistido", id),
+  registrarPasse:           (idAssistido) => safeInvoke("passes:registrar", idAssistido),
 
-  // ========== Passes ==========
-  buscarPassesPorAssistido: (id) => safeInvoke('passes:buscarPorAssistido', id),
-  registrarPasse: (idAssistido) => safeInvoke('passes:registrar', idAssistido),
-
-  // ========== Assistidos / Presenças ==========
-  listarAssistidos: () => safeInvoke('assistidos:listar'),
-  buscarPresencas: (assistidoId, ano, mes) =>
-    safeInvoke('presencas:buscar', { assistidoId, ano, mes }),
-  adicionarPresenca: (assistidoId, data) =>
-    safeInvoke('presencas:adicionar', { assistidoId, data }),
-  removerPresenca: (assistidoId, data) =>
-    safeInvoke('presencas:remover', { assistidoId, data }),
+  listarAssistidos: () => safeInvoke("assistidos:listar"),
+  buscarPresencas:  (assistidoId, ano, mes) => safeInvoke("presencas:buscar", { assistidoId, ano, mes }),
+  adicionarPresenca:(assistidoId, data)     => safeInvoke("presencas:adicionar", { assistidoId, data }),
+  removerPresenca:  (assistidoId, data)     => safeInvoke("presencas:remover",   { assistidoId, data }),
 });

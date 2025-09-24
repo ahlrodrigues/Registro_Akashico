@@ -1,60 +1,64 @@
 // ==============================================
 // PATH: main.js
 // Objetivo: Ponto de entrada do Electron
-// - Cria a janela principal
-// - Registra handlers IPC (usuários, presenças, etc.)
-// - Abre a página de cadastro para teste
+// - Registra handlers IPC
+// - Cria a janela principal com preload
+// - Abre o relatório
 // ==============================================
 
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-require("dotenv").config();
 
-// Handlers (modular)
-const { registrarUsuarioHandlers } = require("./backend/handlers/usuarioHandler");
-const { registerPresencasHandlers } = require("./backend/handlers/presencasHandler");
-// const { registrarPassesHandlers } = require("./backend/handlers/passesHandler");
-// const { registerOutrosHandlers } = require("./backend/handlers/...");
+// Handlers (modularizados)
+const { registrarUsuarioHandlers }   = require("./backend/handlers/usuarioHandler");
+const { registerPresencasHandlers }  = require("./backend/handlers/presencasHandler"); // se existir
+// const { registrarPassesHandlers } = require("./backend/handlers/passesHandler");    // se existir
 
-let mainWindow;
+function bootHandlers() {
+  try { registrarUsuarioHandlers(ipcMain);  } catch (e) { console.error("Usuarios IPC FAIL:", e); }
+  try { registerPresencasHandlers?.(ipcMain); } catch (e) { console.error("Presencas IPC FAIL:", e); }
+  // try { registrarPassesHandlers?.(ipcMain); } catch (e) { console.error("Passes IPC FAIL:", e); }
+}
 
-/** Cria a janela principal */
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const preloadPath = path.join(__dirname, "preload.js");
+  console.log("🧩 PRELOAD:", preloadPath);
+
+  const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      sandbox: false,
+      preload: preloadPath,
     },
   });
 
-  // 💡 Durante o teste do cadastro, abra a página de cadastro direto.
-  // Depois volte para index.html quando quiser.
-  mainWindow.loadFile(path.join(__dirname, "frontend", "pages", "cadastro.html"));
-  // mainWindow.loadFile(path.join(__dirname, "frontend", "pages", "index.html"));
+  // Abra a página do RELATÓRIO
+  win.loadFile(path.join(__dirname, "frontend", "pages", "relatorio.html"));
 
-  if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools();
-  }
+  // DevTools em dev
+  win.webContents.openDevTools({ mode: "detach" });
+
+  // Log simples pro renderer checar se o preload rodou
+  win.webContents.on("did-finish-load", () => {
+    console.log("🌐 Renderer carregado.");
+  });
 }
 
 app.whenReady().then(() => {
-  // 🔗 Registra IPCs (uma única vez)
-  registrarUsuarioHandlers(ipcMain); // << necessário p/ cadastro funcionar
-  registerPresencasHandlers(ipcMain);
-  // registrarPassesHandlers?.(ipcMain);
-  // registerOutrosHandlers?.(ipcMain);
-
+  bootHandlers();
   createWindow();
 });
 
 app.on("window-all-closed", () => {
-  // No Linux/Windows: encerra app quando todas as janelas fecharem
   if (process.platform !== "darwin") app.quit();
 });
 
 app.on("activate", () => {
-  // No macOS: recria janela ao clicar no ícone do dock
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// Torna rejeições visíveis no console em dev
+process.on("unhandledRejection", (err) => console.error("UNHANDLED:", err));

@@ -1,97 +1,120 @@
+<!-- ============================================
+   Caminho: frontend/pages/relatorio.html
+   Objetivo: Relatório de Cadastros (lista + modal de edição)
+   Nota:
+   - “Apelido” usa o campo nomeSocial do banco
+   ============================================ -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Relatório de Cadastros</title>
+  <title data-i18n="relatorio.titulo">Relatório de Cadastros</title>
   <link rel="stylesheet" href="../styles/style.css">
   <script type="module" src="../scripts/relatorio.js" defer></script>
-  <script type="module" src="../scripts/modalCadastro.js" defer></script>
+  <!-- REMOVIDO: modalCadastro.js (não existe e causava ERR_FILE_NOT_FOUND) -->
 </head>
 <body>
 
   <div id="cabecalho-container"></div>
 
   <main>
-    <input type="text" id="busca" placeholder="Buscar por nome..." />
+    <input type="text" id="busca" placeholder="Buscar por nome..." aria-label="Buscar por nome" />
     <div class="botoes-centrais">
-      <button id="btnVer" disabled>👁️ Ver</button>
-      <button id="btnImprimirPasse" disabled>🖨️ Imprimir Passe</button>
-      
-
+      <button id="btnVer" disabled>👁️ <span data-i18n="relatorio.ver">Ver</span></button>
+      <button id="btnImprimirPasse" disabled>🖨️ <span data-i18n="relatorio.imprimirPasse">Imprimir Passe</span></button>
     </div>
 
-    <table id="tabelaUsuarios">
+    <table id="tabelaUsuarios" aria-describedby="busca">
       <thead>
         <tr>
-          <th><input type="checkbox" id="selecionarTodos"></th>
+          <th><input type="checkbox" id="selecionarTodos" aria-label="Selecionar todos"></th>
           <th>ID</th>
-          <th>Nome</th>
-          <th>Apelido</th>
-          <th>Telefone</th>
-          <th>Email</th>
-          <th>Grau</th>
-          <th>Status</th>
+          <th data-i18n="relatorio.nome">Nome</th>
+          <th data-i18n="relatorio.apelido">Apelido</th>
+          <th data-i18n="relatorio.dataNascimento">Nascimento</th>
+          <th data-i18n="relatorio.cep">CEP</th>
+          <th data-i18n="relatorio.logradouro">Logradouro</th>
+          <th data-i18n="relatorio.numero">Número</th>
+          <th data-i18n="relatorio.bairro">Bairro</th>
+          <th data-i18n="relatorio.cidade">Cidade</th>
+          <th data-i18n="relatorio.estado">Estado</th>
+          <th data-i18n="relatorio.telefone">Telefone</th>
+          <th data-i18n="relatorio.email">Email</th>
+          <th data-i18n="relatorio.redeSocial">Rede Social</th>
+          <th data-i18n="relatorio.status">Status</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Conteúdo preenchido via JS -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </main>
 
   <!-- Modal do Cadastro -->
-  <div id="modalCadastroUsuario" class="modal hidden">
+  <div id="modalCadastroUsuario" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="tituloModalCadastro">
     <div class="modal-box modal-content">
-
-      <h2>Editar Cadastro</h2>
+      <h2 id="tituloModalCadastro" data-i18n="relatorio.editarCadastro">Editar Cadastro</h2>
 
       <form id="formEditarUsuario">
-        <label for="nome">Nome:</label>
+        <input type="hidden" id="usuarioId" name="usuarioId" />
+
+        <label for="nome" data-i18n="relatorio.campo.nome">Nome:</label>
         <input type="text" id="nome" name="nome" required>
 
-        <label for="apelido">Apelido:</label>
+        <label for="apelido" data-i18n="relatorio.campo.apelido">Apelido:</label>
         <input type="text" id="apelido" name="apelido">
 
-        <label for="grau">Tipo:</label>
-        <select id="grau" name="grau">
-          <option value="assistido">Assistido</option>
-          <option value="servidor">Servidor</option>
-          <option value="discípulo">Discípulo</option>
-        </select>
+        <label for="dataNascimento" data-i18n="relatorio.campo.dataNascimento">Data de Nascimento:</label>
+        <input type="date" id="dataNascimento" name="dataNascimento">
 
-        <label for="telefone">Telefone:</label>
+        <label for="cep" data-i18n="relatorio.campo.cep">CEP:</label>
+        <input type="text" id="cep" name="cep">
+
+        <label for="logradouro" data-i18n="relatorio.campo.logradouro">Logradouro:</label>
+        <input type="text" id="logradouro" name="logradouro">
+
+        <label for="numero" data-i18n="relatorio.campo.numero">Número:</label>
+        <input type="text" id="numero" name="numero">
+
+        <label for="bairro" data-i18n="relatorio.campo.bairro">Bairro:</label>
+        <input type="text" id="bairro" name="bairro">
+
+        <label for="cidade" data-i18n="relatorio.campo.cidade">Cidade:</label>
+        <input type="text" id="cidade" name="cidade">
+
+        <label for="estado" data-i18n="relatorio.campo.estado">Estado:</label>
+        <input type="text" id="estado" name="estado">
+
+        <label for="telefone" data-i18n="relatorio.campo.telefone">Telefone:</label>
         <input type="tel" id="telefone" name="telefone">
 
-        <label for="email">Email:</label>
+        <label for="email" data-i18n="relatorio.campo.email">Email:</label>
         <input type="email" id="email" name="email">
 
-        <label for="status">Status:</label>
+        <label for="redeSocial" data-i18n="relatorio.campo.redeSocial">Rede Social:</label>
+        <input type="text" id="redeSocial" name="redeSocial">
+
+        <label for="status" data-i18n="relatorio.campo.status">Status:</label>
         <select id="status" name="status" required>
-          <option value="ativo" selected>Ativo</option>
-          <option value="desativado">Desativado</option>
+          <option value="ativo" data-i18n="relatorio.status.ativo" selected>Ativo</option>
+          <option value="desativado" data-i18n="relatorio.status.desativado">Desativado</option>
         </select>
 
-        <!-- Relatórios adicionais -->
-        <section id="relatoriosExtras" class="hidden">
-          <h3>Presenças (últimos 6 meses)</h3>
+        <section id="relatoriosExtras" class="hidden" aria-live="polite">
+          <h3 data-i18n="relatorio.presencas.titulo">Presenças (últimos 6 meses)</h3>
           <div id="relatorioPresencas"></div>
 
-          <h3>Histórico de Passes</h3>
+          <h3 data-i18n="relatorio.passes.titulo">Histórico de Passes</h3>
           <div id="relatorioPasses"></div>
         </section>
 
         <div class="form-actions">
-          <button type="submit" id="btnSalvar" class="btn btn-primary">Salvar</button>
-          <button type="button" class="btn" id="btnFecharModal">Fechar</button>
-          <button type="button" id="btnExcluir" class="btn btn-danger hidden">Excluir</button>
+          <button type="submit" id="btnSalvar" class="btn btn-primary" data-i18n="acao.salvar">Salvar</button>
+          <button type="button" class="btn" id="btnFecharModal" data-i18n="acao.fechar">Fechar</button>
+          <button type="button" id="btnExcluir" class="btn btn-danger" data-i18n="acao.excluir">Excluir</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Carregamento modular do cabeçalho -->
   <script type="module" src="../scripts/incluirComponentes.js"></script>
-  <script type="module" src="../scripts/relatorio.js"></script>
-
 </body>
 </html>
