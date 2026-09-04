@@ -82,6 +82,29 @@ function registrarPasseHandlers(ipcMain) {
 
     return { ok: true, id: info.lastInsertRowid, data: t.data, hora: t.hora, tipo };
   });
+
+  // 🖨️ Imprimir (simulado) o passe mais recente de cada assistido informado
+  // req: ids:number[]
+  // resp: { ok:true, impressos: Array<{assistidoId, nome, tipo}> }
+  ipcMain.handle("passes:imprimirParaUsuarios", (event, ids) => {
+    const lista = Array.isArray(ids) ? ids : [ids];
+
+    const buscarUsuario = db.prepare(`SELECT nomeCompleto FROM usuarios WHERE id = ?`);
+    const buscarUltimoPasse = db.prepare(`
+      SELECT tipo FROM passes WHERE assistido_id = ? ORDER BY data DESC, hora DESC LIMIT 1
+    `);
+
+    const impressos = lista.map((assistidoId) => {
+      const usuario = buscarUsuario.get(assistidoId);
+      const passe = buscarUltimoPasse.get(assistidoId);
+      const nome = usuario?.nomeCompleto ?? `#${assistidoId}`;
+      const tipo = passe?.tipo ?? "comum";
+      console.log(`🖨️ [simulado] Imprimindo passe de ${nome} — tipo: ${tipo}`);
+      return { assistidoId, nome, tipo };
+    });
+
+    return { ok: true, impressos };
+  });
 }
 
 module.exports = { registrarPasseHandlers };

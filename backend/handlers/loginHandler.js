@@ -1,17 +1,23 @@
-function registrarLoginHandler(ipcMain) {
-  const sqlite3 = require('sqlite3').verbose();
-  const path = require('path');
-  const dbPath = path.join(__dirname, '../db/usuarios.db');
+// ============================================
+// Caminho: backend/handlers/loginHandler.js
+// Objetivo: Identificar um assistido pelo e-mail + telefone no banco ativo
+// Banco: mesmo arquivo usado por usuarioHandler.js (~/.seara-de-luz/database.sqlite)
+// ============================================
 
-  ipcMain.handle('usuario:login', async (_, email, whatsapp) => {
-    const db = new sqlite3.Database(dbPath);
-    return new Promise((resolve) => {
-      db.get("SELECT * FROM usuarios WHERE email = ? AND whatsapp = ?", [email, whatsapp], (err, row) => {
-        db.close();
-        if (err || !row) return resolve(null);
-        resolve(row);
-      });
-    });
+const Database = require("better-sqlite3");
+const { getDbPath } = require("./usuarioHandler");
+
+function registrarLoginHandler(ipcMain) {
+  ipcMain.handle("usuario:login", async (_event, email, telefone) => {
+    const db = new Database(getDbPath());
+    try {
+      const usuario = db
+        .prepare(`SELECT * FROM usuarios WHERE email = ? AND telefone = ?`)
+        .get(email, telefone);
+      return usuario ?? null;
+    } finally {
+      db.close();
+    }
   });
 }
 

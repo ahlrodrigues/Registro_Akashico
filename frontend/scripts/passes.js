@@ -11,12 +11,12 @@ form.addEventListener('submit', async (e) => {
   resultado.textContent = 'Registrando...';
 
   try {
-    const resposta = await window.electron.ipcRenderer.invoke('passes:registrar', Number(id));
+    const resposta = await window.api.passes.registrar(Number(id));
 
-    if (resposta.sucesso) {
-      resultado.innerHTML = `✅ Passe registrado para <strong>${resposta.nome}</strong><br>Tipo: <strong>${resposta.tipoPasse}</strong>`;
+    if (resposta.ok) {
+      resultado.innerHTML = `✅ Passe registrado (assistido #${id})<br>Tipo: <strong>${resposta.tipo}</strong> em ${resposta.data} às ${resposta.hora}`;
     } else {
-      resultado.textContent = `❌ Erro: ${resposta.erro}`;
+      resultado.textContent = `❌ Erro ao registrar o passe.`;
     }
   } catch (err) {
     resultado.textContent = `❌ Falha de comunicação: ${err.message}`;

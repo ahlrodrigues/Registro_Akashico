@@ -48,7 +48,7 @@ contextBridge.exposeInMainWorld("api", {
     listarPorAssistido:   (id)  => safeInvoke("passes:buscarPorAssistido", id),
     buscarPorAssistido:   (id)  => safeInvoke("passes:buscarPorAssistido", id),
     imprimirParaUsuarios: (ids) => safeInvoke("passes:imprimirParaUsuarios", ids),
-    registrar:            (idAssistido) => safeInvoke("passes:registrar", idAssistido),
+    registrar:            (idAssistido) => safeInvoke("passes:registrar", { assistidoId: idAssistido }),
   },
 
   // -------- Funções “flat” legadas (compatibilidade com código antigo)
@@ -59,9 +59,8 @@ contextBridge.exposeInMainWorld("api", {
   excluirUsuario:     (id)                  => safeInvoke("usuario:excluir", id),
 
   buscarPassesPorAssistido: (id) => safeInvoke("passes:buscarPorAssistido", id),
-  registrarPasse:           (idAssistido) => safeInvoke("passes:registrar", idAssistido),
+  registrarPasse:           (idAssistido) => safeInvoke("passes:registrar", { assistidoId: idAssistido }),
 
-  listarAssistidos: () => safeInvoke("assistidos:listar"),
   buscarPresencas:  (assistidoId, ano, mes) => safeInvoke("presencas:buscar", { assistidoId, ano, mes }),
   adicionarPresenca:(assistidoId, data)     => safeInvoke("presencas:adicionar", { assistidoId, data }),
   removerPresenca:  (assistidoId, data)     => safeInvoke("presencas:remover",   { assistidoId, data }),

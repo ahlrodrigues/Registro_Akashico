@@ -39,30 +39,32 @@ function normalizePayload(payload = {}) {
   };
 }
 
+// Schema (sem "grau") — reaproveitado por dbResetHandler.js
+const CREATE_USUARIOS_SQL = `
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nomeCompleto   TEXT NOT NULL,
+    nomeSocial     TEXT,
+    dataNascimento TEXT,
+    cep            TEXT,
+    logradouro     TEXT,
+    numero         TEXT,
+    bairro         TEXT,
+    cidade         TEXT,
+    estado         TEXT,
+    telefone       TEXT,
+    email          TEXT,
+    redeSocial     TEXT,
+    status         TEXT NOT NULL DEFAULT 'ativo'
+  );
+`;
+
 /** Registra todos os IPCs de usuários. Chame no main.js. */
 function registrarUsuarioHandlers(ipcMain) {
   const dbPath = getDbPath();
   const db = new Database(dbPath);
 
-  // Schema (sem "grau")
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nomeCompleto   TEXT NOT NULL,
-      nomeSocial     TEXT,
-      dataNascimento TEXT,
-      cep            TEXT,
-      logradouro     TEXT,
-      numero         TEXT,
-      bairro         TEXT,
-      cidade         TEXT,
-      estado         TEXT,
-      telefone       TEXT,
-      email          TEXT,
-      redeSocial     TEXT,
-      status         TEXT NOT NULL DEFAULT 'ativo'
-    );
-  `).run();
+  db.prepare(CREATE_USUARIOS_SQL).run();
 
   // Statements
   const insertStmt = db.prepare(`
@@ -151,4 +153,4 @@ function registrarUsuarioHandlers(ipcMain) {
   console.log("🧩 [USUARIOS] IPCs registrados. DB:", dbPath);
 }
 
-module.exports = { registrarUsuarioHandlers, getDbPath };
+module.exports = { registrarUsuarioHandlers, getDbPath, CREATE_USUARIOS_SQL };
